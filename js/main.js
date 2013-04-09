@@ -18,13 +18,12 @@ function init() {
     clock = new THREE.Clock();
 
     scene = new Physijs.Scene();
-    scene.setGravity(new THREE.Vector3(0, -100, 0));
+    scene.setGravity(new THREE.Vector3(0, -400, 0));
 
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000);
-    camera.position.z = 300;
-    camera.position.y = 50;
-    camera.position.x = -100;
-    scene.add(camera);
+    camera.position.z = 375;
+    camera.position.y = 75;
+    camera.position.x = -150;
 
     var groundTexture = THREE.ImageUtils.loadTexture('images/grid_cool.jpg');
     var groundMaterial = Physijs.createMaterial(
@@ -33,12 +32,19 @@ function init() {
         0.4
     );
     var ground = new Physijs.BoxMesh(new THREE.CubeGeometry(250, 5, 250), Physijs.createMaterial(groundMaterial, 0.2, 1.0), 0);
-    ground.position.y = - 50;
+    ground.position.y = 0;
     scene.add(ground);
 
     var platform = new Physijs.BoxMesh(new THREE.CubeGeometry(250, 5, 250), Physijs.createMaterial(groundMaterial, 0.2, 1.0), 0);
-    platform.position.x = 500;
+    platform.position.x = 180;
+    platform.position.y = 110;
+    platform.rotation.z = 70;
     scene.add(platform);
+
+    var level = new Physijs.BoxMesh(new THREE.CubeGeometry(250, 5, 250), Physijs.createMaterial(groundMaterial, 0.2, 1.0), 0);
+    level.position.z = 150;
+    level.position.y = -150;
+    scene.add(level);
 
     geometry = new THREE.SphereGeometry(15, 32, 32);
     var boxTexture = THREE.ImageUtils.loadTexture('images/custom_crate.jpg');
@@ -48,10 +54,14 @@ function init() {
         0
     );
     mesh = new Physijs.SphereMesh(geometry, boxMaterial);
-    mesh.position.set(0, 30, 0);
+    mesh.position.set(0, 60, 0);
     scene.add(mesh);
 
-    controls = new THREE.TrackballControls( camera );
+    scene.add(camera);
+
+    controls = new THREE.OrbitControls(camera);
+    controls.rotateSpeed = 10;
+    controls.panSpeed = 10;
 
     camera.lookAt(mesh.position);
 
@@ -87,6 +97,7 @@ function render() {
     scene.simulate();
 
     controls.update();
+
     camera.lookAt(mesh.position);
 
     renderer.render(scene, camera);
@@ -95,25 +106,27 @@ function render() {
 }
 
 function update() {
+
     var delta = clock.getDelta(); // seconds.
     var moveDistance = 200 * delta; // 200 pixels per second
 
-    var dirCameraZ;
+    var v;
     switch(true) {
         case keyboard.pressed('Z'):
-            dirCameraZ = (new THREE.Vector3(0, 0, -1)).applyMatrix4(camera.matrixWorld);
+            v = new THREE.Vector3(0, 0, -1);
             break;
         case keyboard.pressed('S'):
-            dirCameraZ = (new THREE.Vector3( 0, 0, 1 )).applyMatrix4(camera.matrixWorld);
+            v = new THREE.Vector3( 0, 0, 1 );
             break;
         case keyboard.pressed("Q"):
-            dirCameraZ = (new THREE.Vector3( -1, 0, 0 )).applyMatrix4(camera.matrixWorld);
+            v = new THREE.Vector3( -1, 0, 0 );
             break;
         case keyboard.pressed('D'):
-            dirCameraZ = (new THREE.Vector3( 1, 0, 0 )).applyMatrix4(camera.matrixWorld);
+            v = new THREE.Vector3( 1, 0, 0 );
     }
 
-    if(dirCameraZ !== undefined) {
+    if(v !== undefined) {
+        var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
         var dirCamera = dirCameraZ.sub( camera.position).normalize();
         dirCamera.y = 0;
         mesh.applyCentralForce(dirCamera.multiplyScalar(1e8*0.05));
@@ -123,4 +136,5 @@ function update() {
         console.log("Pressed space");
         mesh.applyCentralImpulse(new THREE.Vector3(0, 1e8*0.002, 0))
     }
+
 }
