@@ -31,8 +31,8 @@ THREE.OrbitControls = function ( object, domElement ) {
     this.minPolarAngle = 0; // radians
     this.maxPolarAngle = Math.PI; // radians
 
-    this.minDistance = 0;
-    this.maxDistance = Infinity;
+    this.minDistance = 300;
+    this.maxDistance = 300;
 
     this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
@@ -147,7 +147,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
     };
 
-    this.update = function () {
+    this.update = function (test) {
 
         var position = this.object.position;
         var offset = position.clone().sub( this.center );
@@ -180,11 +180,20 @@ THREE.OrbitControls = function ( object, domElement ) {
         // restrict radius to be between desired limits
         radius = Math.max( this.minDistance, Math.min( this.maxDistance, radius ) );
 
-        offset.x = radius * Math.sin( phi ) * Math.sin( theta );
+        /*offset.x = radius * Math.sin( phi ) * Math.sin( theta );
         offset.y = radius * Math.cos( phi );
-        offset.z = radius * Math.sin( phi ) * Math.cos( theta );
+        offset.z = radius * Math.sin( phi ) * Math.cos( theta );*/
+        //position.copy( this.center ).add( offset );
 
-        position.copy( this.center ).add( offset );
+        if(test !== null) {
+            console.log(test.normalize().multiplyScalar(100));
+        }
+        
+
+        /*if(state !== STATE.ROTATE) {
+            this.object.position.x = mesh.position.x;
+        }*/
+        
 
         this.object.lookAt( this.center );
 
@@ -201,7 +210,6 @@ THREE.OrbitControls = function ( object, domElement ) {
         }
 
     };
-
 
     function getAutoRotationAngle() {
 

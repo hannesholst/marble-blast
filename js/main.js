@@ -1,75 +1,54 @@
+// is DOM fully loaded?
 $(document).ready(function() {
 
+    // load Physijs worker & ammo
     'use strict';
-
     Physijs.scripts.worker = '/js/physijs_worker.js';
     Physijs.scripts.ammo = '/js/ammo.js';
 
-    var camera, scene, renderer, geometry, controls, material, mesh, keyboard, clock;
+    // set global variables
+    var scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock;
+    var test;
 
+    // initialize game
     init();
+
+    // render game
     render();
 
 });
 
+// initialize game
 function init() {
 
-    keyboard = new KeyboardState();
-    clock = new THREE.Clock();
-
+    // add scene
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1500, 0));
 
+    // add camera
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
     camera.position.z = 375;
     camera.position.y = 75;
     camera.position.x = -150;
 
-    // skybox
-    /*var path = "images/skybox/";
-    var format = '.jpg';
-    var urls = [
-        path + 'sky_lf' + format, path + 'sky_rt' + format,
-        path + 'sky_up' + format, path + 'sky_dn' + format,
-        path + 'sky_fr' + format, path + 'sky_bk' + format
-    ];
+    keyboard = new KeyboardState();
+    clock = new THREE.Clock();
 
-    var reflectionCube = THREE.ImageUtils.loadTextureCube( urls );
-    reflectionCube.format = THREE.RGBFormat;
+    var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
+    floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set( 8, 8 );
 
-    var refractionCube = new THREE.Texture( reflectionCube.image, new THREE.CubeRefractionMapping() );
-    refractionCube.format = THREE.RGBFormat;
-
-    var shader = THREE.ShaderLib[ "cube" ];
-    shader.uniforms[ "tCube" ].value = reflectionCube;
-
-    var material = new THREE.ShaderMaterial( {
-
-            fragmentShader: shader.fragmentShader,
-            vertexShader: shader.vertexShader,
-            uniforms: shader.uniforms,
-            depthWrite: false,
-            side: THREE.BackSide
-
-        } ),
-
-    test = new THREE.Mesh( new THREE.CubeGeometry( 100, 100, 100 ), material );
-    scene.add( test );*/
-
-
-    var groundTexture = THREE.ImageUtils.loadTexture('images/grid_cool.jpg');
-    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.repeat.set( 8, 8 );
-    var groundMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: groundTexture }),
+    var floorMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: floorTexture }),
         10,
         5
     );
-    var ground = new Physijs.BoxMesh(new THREE.CubeGeometry(1000, 5, 1000), Physijs.createMaterial(groundMaterial, 0.2, 1.0), 0);
-    scene.add(ground);
+
+    var floor = new Physijs.BoxMesh(new THREE.CubeGeometry(1000, 5, 1000), Physijs.createMaterial(floorMaterial, 0.2, 1.0), 0);
+    scene.add(floor);
 
     geometry = new THREE.SphereGeometry(16, 32, 32);
-    var boxTexture = THREE.ImageUtils.loadTexture('images/custom_crate.jpg');
+    var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
     var boxMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: boxTexture }),
         10,
@@ -82,6 +61,7 @@ function init() {
     scene.add(camera);
     //camera.lookAt(mesh.position);
 
+    // add controls
     controls = new THREE.OrbitControls(camera);
     controls.userRotateSpeed = 3;
     controls.userPanSpeed = 100;
@@ -92,7 +72,7 @@ function init() {
     light.position.set(250, 250, 250 );
     scene.add( light );
 
-    renderer = new THREE.WebGLRenderer( { antialias: false });
+    renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     document.body.appendChild(renderer.domElement);
@@ -118,21 +98,20 @@ function onWindowResize() {
 function render() {
 
     update();
-    scene.simulate();
 
     dafuq();
-    controls.update();
+    controls.center = mesh.position;
+    controls.update(test);
 
+    scene.simulate();
     renderer.render(scene, camera);
     requestAnimationFrame(render);
 
 }
 
 function dafuq() {
-    var distance = camera.position.distanceTo(mesh.position);
-    camera.position.x = mesh.position.x;
-    camera.translateZ(-(distance-400));
-    controls.center = mesh.position;
+    /*var distance = camera.position.distanceTo(mesh.position);
+    camera.translateZ(-(distance-400));*/
 }
 
 function update() {
@@ -161,9 +140,11 @@ function update() {
 
     if(v !== undefined) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
-        var dirCamera = dirCameraZ.sub( camera.position).normalize();
-        dirCamera.y = 0;
-        mesh.applyCentralForce(dirCamera.multiplyScalar(1e8*0.05));
+        /*var dirCamera*/test = dirCameraZ.sub( camera.position).normalize();
+        //dirCamera.y = 0;
+        mesh.applyCentralForce(test.multiplyScalar(1e8*0.05));
+    } else {
+        test = null;
     }
 
     if ( keyboard.pressed("space") ) {
