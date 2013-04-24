@@ -141,7 +141,7 @@ function update() {
     if(v !== undefined) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
         /*var dirCamera*/test = dirCameraZ.sub( camera.position).normalize();
-        //dirCamera.y = 0;
+        /*dirCamera*/test.y = 0;
         mesh.applyCentralForce(test.multiplyScalar(1e8*0.05));
     } else {
         test = null;

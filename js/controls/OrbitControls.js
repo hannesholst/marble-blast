@@ -35,6 +35,7 @@ THREE.OrbitControls = function ( object, domElement ) {
     this.maxDistance = 300;
 
     this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+    this.thetaBackup = null;
 
     // internals
 
@@ -57,8 +58,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 
     var lastPosition = new THREE.Vector3();
 
-    var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2 };
+    var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, MOVING: 3 };
     var state = STATE.NONE;
+    var intermediateState = STATE.NONE;
 
     // events
 
@@ -180,21 +182,48 @@ THREE.OrbitControls = function ( object, domElement ) {
         // restrict radius to be between desired limits
         radius = Math.max( this.minDistance, Math.min( this.maxDistance, radius ) );
 
-        /*offset.x = radius * Math.sin( phi ) * Math.sin( theta );
-        offset.y = radius * Math.cos( phi );
-        offset.z = radius * Math.sin( phi ) * Math.cos( theta );*/
-        //position.copy( this.center ).add( offset );
 
-        if(test !== null) {
-            console.log(test.normalize().multiplyScalar(100));
+        
+        offset.x = radius;
+        offset.y = radius;
+        offset.z = radius;
+
+        if (state !== STATE.ROTATE) {
+            if (this.thetaBackup === null) {
+                offset.x *= Math.sin( phi ) * Math.sin( theta );
+                offset.y *= Math.cos( phi );
+                offset.z *= Math.sin( phi ) * Math.cos( theta );
+                this.thetaBackup = theta;
+            } else {
+                offset.x *= Math.sin( phi ) * Math.sin( this.thetaBackup );
+                offset.y *= Math.cos( phi );
+                offset.z *= Math.sin( phi ) * Math.cos( this.thetaBackup );
+            }
         }
-        
 
-        /*if(state !== STATE.ROTATE) {
-            this.object.position.x = mesh.position.x;
-        }*/
-        
+        if (state === STATE.ROTATE) {   
+            if (intermediateState === STATE.MOVING) {
+                console.log('moving');
+                offset.x *= Math.sin( phi ) * Math.sin( theta );
+                offset.y *= Math.cos( phi );
+                offset.z *= Math.sin( phi ) * Math.cos( theta );
+                this.thetaBackup = theta;
+            } else {
+                console.log('clicked');
+                offset.x *= Math.sin( phi ) * Math.sin( this.thetaBackup );
+                offset.y *= Math.cos( phi );
+                offset.z *= Math.sin( phi ) * Math.cos( this.thetaBackup );
+            }
+        }
 
+        intermediateState = STATE.NONE;
+
+        //console.log('phi: ' + phi + ', theta: ' + theta);
+
+
+
+        position.copy( this.center ).add( offset );
+        
         this.object.lookAt( this.center );
 
         thetaDelta = 0;
@@ -265,6 +294,7 @@ THREE.OrbitControls = function ( object, domElement ) {
             scope.rotateUp( 2 * Math.PI * rotateDelta.y / PIXELS_PER_ROUND * scope.userRotateSpeed );
 
             rotateStart.copy( rotateEnd );
+            intermediateState = STATE.MOVING;            
 
         } else if ( state === STATE.ZOOM ) {
 
