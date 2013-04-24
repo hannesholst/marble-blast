@@ -36,6 +36,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
     this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
     this.thetaBackup = null;
+    this.phiBackup = null;
 
     // internals
 
@@ -194,10 +195,11 @@ THREE.OrbitControls = function ( object, domElement ) {
                 offset.y *= Math.cos( phi );
                 offset.z *= Math.sin( phi ) * Math.cos( theta );
                 this.thetaBackup = theta;
+                this.phiBackup = phi;
             } else {
-                offset.x *= Math.sin( phi ) * Math.sin( this.thetaBackup );
-                offset.y *= Math.cos( phi );
-                offset.z *= Math.sin( phi ) * Math.cos( this.thetaBackup );
+                offset.x *= Math.sin( this.phiBackup ) * Math.sin( this.thetaBackup );
+                offset.y *= Math.cos( this.phiBackup );
+                offset.z *= Math.sin( this.phiBackup ) * Math.cos( this.thetaBackup );
             }
         }
 
@@ -208,11 +210,12 @@ THREE.OrbitControls = function ( object, domElement ) {
                 offset.y *= Math.cos( phi );
                 offset.z *= Math.sin( phi ) * Math.cos( theta );
                 this.thetaBackup = theta;
+                this.phiBackup = phi;
             } else {
                 console.log('clicked');
-                offset.x *= Math.sin( phi ) * Math.sin( this.thetaBackup );
-                offset.y *= Math.cos( phi );
-                offset.z *= Math.sin( phi ) * Math.cos( this.thetaBackup );
+                offset.x *= Math.sin( this.phiBackup ) * Math.sin( this.thetaBackup );
+                offset.y *= Math.cos( this.phiBackup );
+                offset.z *= Math.sin( this.phiBackup ) * Math.cos( this.thetaBackup );
             }
         }
 
