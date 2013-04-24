@@ -67,6 +67,8 @@ function init() {
     controls.userPanSpeed = 100;
     //controls.minPolarAngle = (2/5)*Math.PI;
     controls.maxPolarAngle = (2/5)*Math.PI;
+    controls.minDistance = 600;
+    controls.maxDistance = 600;
 
     var light = new THREE.PointLight( 0xFFFF00 );
     light.position.set(250, 250, 250 );
@@ -79,7 +81,7 @@ function init() {
 
     window.addEventListener( 'resize', onWindowResize, false );
 
-    console.log(camera.position.distanceTo(mesh.position));
+    THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
 }
 
 function onWindowResize() {
@@ -101,7 +103,7 @@ function render() {
 
     dafuq();
     controls.center = mesh.position;
-    controls.update(test);
+    controls.update();
 
     scene.simulate();
     renderer.render(scene, camera);
@@ -136,13 +138,14 @@ function update() {
         case keyboard.pressed('D'):
             v = new THREE.Vector3( 1, 0, 0 );
             console.log("Pressed D");
+
     }
 
     if(v !== undefined) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
-        /*var dirCamera*/test = dirCameraZ.sub( camera.position).normalize();
-        /*dirCamera*/test.y = 0;
-        mesh.applyCentralForce(test.multiplyScalar(1e8*0.05));
+        var dirCamera = dirCameraZ.sub( camera.position).normalize();
+        dirCamera.y = 0;
+        mesh.applyCentralForce(dirCamera.multiplyScalar(1e8*0.05));
     } else {
         test = null;
     }
