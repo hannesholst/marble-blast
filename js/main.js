@@ -61,6 +61,32 @@ function init() {
     scene.add(camera);
     //camera.lookAt(mesh.position);
 
+
+
+
+    // skybox
+    var urlPrefix   = "img/skybox/";
+    var urls = [ urlPrefix + "sky_rt.jpg", urlPrefix + "sky_lf.jpg",
+            urlPrefix + "sky_up.jpg", urlPrefix + "sky_dn.jpg",
+            urlPrefix + "sky_fr.jpg", urlPrefix + "sky_bk.jpg" ];
+    var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+
+    var shader  = THREE.ShaderLib["cube"];
+    shader.uniforms["tCube"].texture = textureCube;
+    var material = new THREE.ShaderMaterial({
+        fragmentShader  : shader.fragmentShader,
+        vertexShader    : shader.vertexShader,
+        uniforms    : shader.uniforms
+    });
+    console.log(urls);
+    skyboxMesh  = new THREE.Mesh( new THREE.CubeGeometry( 2000, 2000, 2000, 1, 1, 1, null, true ), material );
+
+    scene.add( skyboxMesh );
+
+
+
+
+
     // add controls
     controls = new THREE.OrbitControls(camera);
     controls.userRotateSpeed = 3;
