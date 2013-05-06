@@ -1,13 +1,14 @@
-// is DOM fully loaded?
+// when DOM loaded
 $(document).ready(function() {
 
     // load Physijs worker & ammo
     'use strict';
-    Physijs.scripts.worker = '/js/physijs_worker.js';
-    Physijs.scripts.ammo = '/js/ammo.js';
+    Physijs.scripts.worker = 'js/physijs_worker.js';
+    Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
     var scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock;
+    var texture_placeholder;
     var test;
 
     // initialize game
@@ -23,10 +24,33 @@ function init() {
 
     // add scene
     scene = new Physijs.Scene();
-    scene.setGravity(new THREE.Vector3(0, -1500, 0));
+    scene.setGravity(new THREE.Vector3(0, -1000, 0));
+
+    texture_placeholder = document.createElement( 'canvas' );
+    texture_placeholder.width = 128;
+    texture_placeholder.height = 128;
+
+    var context = texture_placeholder.getContext( '2d' );
+    context.fillStyle = 'rgb( 200, 200, 200 )';
+    context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
+
+    /*var materials = [
+
+        loadTexture( 'img/skybox/sky_rt.jpg' ), // right
+        loadTexture( 'img/skybox/sky_lf.jpg' ), // left
+        loadTexture( 'img/skybox/sky_up.jpg' ), // top
+        loadTexture( 'img/skybox/sky_dn.jpg' ), // bottom
+        loadTexture( 'img/skybox/sky_fr.jpg' ), // back
+        loadTexture( 'img/skybox/sky_bk.jpg' )  // front
+
+    ];
+    test = new THREE.Mesh( new THREE.CubeGeometry( 3000, 3000, 3000, 7, 7, 7 ), new THREE.MeshFaceMaterial( materials ) );
+    test.scale.x = - 1;*/
+    //scene.add( test );
+
 
     // add camera
-    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
+    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 10000);
     camera.position.z = 375;
     camera.position.y = 75;
     camera.position.x = -150;
@@ -38,53 +62,33 @@ function init() {
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
     floorTexture.repeat.set( 8, 8 );
 
-    var floorMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: floorTexture }),
-        10,
-        5
+    var floor = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(1000, 5, 1000),
+        Physijs.createMaterial(
+            new THREE.MeshBasicMaterial({ map: floorTexture }),
+            1,
+            0
+        ),
+        0
     );
-
-    var floor = new Physijs.BoxMesh(new THREE.CubeGeometry(1000, 5, 1000), Physijs.createMaterial(floorMaterial, 0.2, 1.0), 0);
     scene.add(floor);
 
-    geometry = new THREE.SphereGeometry(16, 32, 32);
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
-    var boxMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: boxTexture }),
-        10,
-        0.3
+
+    mesh = new Physijs.SphereMesh(
+        new THREE.SphereGeometry(16, 32, 32),
+        Physijs.createMaterial(
+            new THREE.MeshBasicMaterial({ map: boxTexture }),
+            1,
+            0
+        ),
+        1000
     );
-    mesh = new Physijs.SphereMesh(geometry, boxMaterial, 2500);
     mesh.position.set(50, 60, 0);
     scene.add(mesh);
 
     scene.add(camera);
     //camera.lookAt(mesh.position);
-
-
-
-
-    // skybox
-    var urlPrefix   = "img/skybox/";
-    var urls = [ urlPrefix + "sky_rt.jpg", urlPrefix + "sky_lf.jpg",
-            urlPrefix + "sky_up.jpg", urlPrefix + "sky_dn.jpg",
-            urlPrefix + "sky_fr.jpg", urlPrefix + "sky_bk.jpg" ];
-    var textureCube = THREE.ImageUtils.loadTextureCube( urls );
-
-    var shader  = THREE.ShaderLib["cube"];
-    shader.uniforms["tCube"].texture = textureCube;
-    var material = new THREE.ShaderMaterial({
-        fragmentShader  : shader.fragmentShader,
-        vertexShader    : shader.vertexShader,
-        uniforms    : shader.uniforms
-    });
-    console.log(urls);
-    skyboxMesh  = new THREE.Mesh( new THREE.CubeGeometry( 2000, 2000, 2000, 1, 1, 1, null, true ), material );
-
-    scene.add( skyboxMesh );
-
-
-
 
 
     // add controls
@@ -100,7 +104,7 @@ function init() {
     light.position.set(250, 250, 250 );
     scene.add( light );
 
-    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     document.body.appendChild(renderer.domElement);
@@ -108,6 +112,26 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
 
     THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+}
+
+function loadTexture( path ) {
+
+    var texture = new THREE.Texture( texture_placeholder );
+    var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: true } );
+
+    var image = new Image();
+    image.onload = function () {
+
+        texture.needsUpdate = true;
+        material.map.image = this;
+
+        render();
+
+    };
+    image.src = path;
+
+    return material;
+
 }
 
 function onWindowResize() {
@@ -127,7 +151,6 @@ function render() {
 
     update();
 
-    dafuq();
     controls.center = mesh.position;
     controls.update();
 
@@ -135,11 +158,6 @@ function render() {
     renderer.render(scene, camera);
     requestAnimationFrame(render);
 
-}
-
-function dafuq() {
-    /*var distance = camera.position.distanceTo(mesh.position);
-    camera.translateZ(-(distance-400));*/
 }
 
 function update() {
@@ -169,15 +187,21 @@ function update() {
 
     if(v !== undefined) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
-        var dirCamera = dirCameraZ.sub( camera.position).normalize();
+        var dirCamera = dirCameraZ.sub( camera.position);
         dirCamera.y = 0;
-        mesh.applyCentralForce(dirCamera.multiplyScalar(1e8*0.05));
+        mesh.applyCentralForce(dirCamera.multiplyScalar(1e7*0.3));
     } else {
-        test = null;
+        var dirCamera = mesh.getLinearVelocity();
+        if (Math.abs(dirCamera.x) > 0 || Math.abs(dirCamera.z) > 0) {
+            var backupY = dirCamera.y;
+            dirCamera.divideScalar(1.02);
+            dirCamera.setY(backupY);
+            mesh.setLinearVelocity(dirCamera);
+        }
     }
 
-    if ( keyboard.pressed("space") ) {
+    if ( keyboard.pressed("space") && mesh.getLinearVelocity().y < 10 ) {
         console.log("Pressed space");
-        mesh.applyCentralImpulse(new THREE.Vector3(0, 1e8*0.002, 0))
+        mesh.applyCentralImpulse(new THREE.Vector3(0, 1e9*0.002, 0))
     }
 }
