@@ -7,7 +7,7 @@ $(document).ready(function() {
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock;
+    var scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course;
     var texture_placeholder;
     var test;
 
@@ -22,11 +22,20 @@ $(document).ready(function() {
 // initialize game
 function init() {
 
+
+
+    course = -1;
+
+    stats = new Stats();
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.top = '0px';
+    $('#container').append(stats.domElement);
+
     // add scene
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
 
-    texture_placeholder = document.createElement( 'canvas' );
+    /*texture_placeholder = document.createElement( 'canvas' );
     texture_placeholder.width = 128;
     texture_placeholder.height = 128;
 
@@ -34,7 +43,7 @@ function init() {
     context.fillStyle = 'rgb( 200, 200, 200 )';
     context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
 
-    /*var materials = [
+    var materials = [
 
         loadTexture( 'img/skybox/sky_rt.jpg' ), // right
         loadTexture( 'img/skybox/sky_lf.jpg' ), // left
@@ -45,8 +54,8 @@ function init() {
 
     ];
     test = new THREE.Mesh( new THREE.CubeGeometry( 3000, 3000, 3000, 7, 7, 7 ), new THREE.MeshFaceMaterial( materials ) );
-    test.scale.x = - 1;*/
-    //scene.add( test );
+    test.scale.x = - 1;
+    scene.add( test );*/
 
 
     // add camera
@@ -56,9 +65,9 @@ function init() {
     camera.position.x = -150;
 
     keyboard = new KeyboardState();
-    clock = new THREE.Clock();
+    clock = new THREE.Clock(true);
 
-    var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
+    var floorTexture = THREE.ImageUtils.loadTexture('img/wood.png');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
     floorTexture.repeat.set( 8, 8 );
 
@@ -71,7 +80,22 @@ function init() {
         ),
         0
     );
+    floor.receiveShadow = true;
     scene.add(floor);
+
+    other = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(500, 5, 500),
+        Physijs.createMaterial(
+            new THREE.MeshBasicMaterial({ map: floorTexture }),
+            10,
+            0
+        ),
+        0
+    );
+    other.position.setY(100);
+    other.position.setX(1000);
+    scene.add(other);
+
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
 
@@ -80,12 +104,14 @@ function init() {
         Physijs.createMaterial(
             new THREE.MeshBasicMaterial({ map: boxTexture }),
             1,
-            0
+            1
         ),
         1000
     );
-    mesh.position.set(50, 60, 0);
+    mesh.castShadow = true;
+    mesh.position.set(0, 50, 0);
     scene.add(mesh);
+    mesh.setDamping(null, 0.96);
 
     scene.add(camera);
     //camera.lookAt(mesh.position);
@@ -97,21 +123,50 @@ function init() {
     controls.userPanSpeed = 100;
     //controls.minPolarAngle = (2/5)*Math.PI;
     controls.maxPolarAngle = (2/5)*Math.PI;
-    controls.minDistance = 600;
-    controls.maxDistance = 600;
+    controls.minDistance = 800;
+    controls.maxDistance = 800;
 
-    var light = new THREE.PointLight( 0xFFFF00 );
-    light.position.set(250, 250, 250 );
-    scene.add( light );
+    var light = new THREE.DirectionalLight();
+    light.castShadow = true;
+    light.shadowDarkness = 0.5;
+    //light.shadowCameraVisible = true;
+    light.position.set(1000, 1000, 1000);
+    scene.add(light);
 
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize($(window).width(), $(window).height());
+    renderer.shadowMapEnabled = true;
+    //renderer.shadowMapSoft = true;
+    //renderer.antialias = true;
 
-    document.body.appendChild(renderer.domElement);
+    $('#container').append(renderer.domElement);
 
     window.addEventListener( 'resize', onWindowResize, false );
 
     THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+    var debugaxis = function(axisLength){
+        //Shorten the vertex function
+        function v(x,y,z){
+            return new THREE.Vertex(new THREE.Vector3(x,y,z));
+        }
+
+        //Create axis (point1, point2, colour)
+        function createAxis(p1, p2, color){
+            var line, lineGeometry = new THREE.Geometry(),
+                lineMat = new THREE.LineBasicMaterial({color: color, lineWidth: 1});
+            lineGeometry.vertices.push(p1, p2);
+            line = new THREE.Line(lineGeometry, lineMat);
+            scene.add(line);
+        }
+
+        createAxis(v(-axisLength, 0, 0), v(axisLength, 0, 0), 0xFF0000);
+        createAxis(v(0, -axisLength, 0), v(0, axisLength, 0), 0x00FF00);
+        createAxis(v(0, 0, -axisLength), v(0, 0, axisLength), 0x0000FF);
+    };
+
+//To use enter the axis length
+    debugaxis(10000);
 }
 
 function loadTexture( path ) {
@@ -141,7 +196,7 @@ function onWindowResize() {
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 
-    controls.handleResize();
+    //controls.handleResize();
 
     render();
 
@@ -149,59 +204,56 @@ function onWindowResize() {
 
 function render() {
 
-    update();
-
+    updateInput();
+    animate();
+    stats.update();
     controls.center = mesh.position;
     controls.update();
 
     scene.simulate();
     renderer.render(scene, camera);
+
     requestAnimationFrame(render);
 
 }
 
-function update() {
+function animate() {
 
-    var delta = clock.getDelta(); // seconds.
-    var moveDistance = 200 * delta; // 200 pixels per second
+    other.__dirtyPosition = true;
+
+    if(other.position.x < 0) course = 1;
+    if(other.position.x > 1000) course = -1;
+
+    other.position.x += 3 * course;
+
+}
+
+function updateInput() {
+
+    var delta = clock.getDelta();
 
     var v;
     switch(true) {
         case keyboard.pressed('Z'):
             v = new THREE.Vector3(0, 0, -1);
-            console.log("Pressed Z");
             break;
         case keyboard.pressed('S'):
             v = new THREE.Vector3( 0, 0, 1 );
-            console.log("Pressed S");
             break;
-        case keyboard.pressed("Q"):
+        case keyboard.pressed('Q'):
             v = new THREE.Vector3(-1, 0, 0 );
-            console.log("Pressed Q");
             break;
         case keyboard.pressed('D'):
             v = new THREE.Vector3( 1, 0, 0 );
-            console.log("Pressed D");
-
     }
 
     if(v !== undefined) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
-        var dirCamera = dirCameraZ.sub( camera.position);
+        var dirCamera = dirCameraZ.sub(camera.position);
         dirCamera.y = 0;
-        mesh.applyCentralForce(dirCamera.multiplyScalar(1e7*0.3));
-    } else {
-        var dirCamera = mesh.getLinearVelocity();
-        if (Math.abs(dirCamera.x) > 0 || Math.abs(dirCamera.z) > 0) {
-            var backupY = dirCamera.y;
-            dirCamera.divideScalar(1.02);
-            dirCamera.setY(backupY);
-            mesh.setLinearVelocity(dirCamera);
-        }
+        mesh.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
+    } else if(keyboard.pressed('space') && Math.abs(mesh.getLinearVelocity().y < 10)) {
+        mesh.applyCentralForce(new THREE.Vector3(0, 1e9 * delta * 2, 0));
     }
 
-    if ( keyboard.pressed("space") && mesh.getLinearVelocity().y < 10 ) {
-        console.log("Pressed space");
-        mesh.applyCentralImpulse(new THREE.Vector3(0, 1e9*0.002, 0))
-    }
 }
