@@ -7,7 +7,7 @@ $(document).ready(function() {
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course;
+    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, dafuq, course, courseDafuq;
     var texture_placeholder;
     var test;
 
@@ -25,6 +25,7 @@ function init() {
 
 
     course = -1;
+    courseDafuq = 1;
 
     stats = new Stats();
     stats.domElement.style.position = 'absolute';
@@ -72,7 +73,7 @@ function init() {
     floorTexture.repeat.set( 8, 8 );
 
     var floor = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(1000, 5, 1000),
+        new THREE.CubeGeometry(3000, 5, 3000),
         Physijs.createMaterial(
             new THREE.MeshBasicMaterial({ map: floorTexture }),
             1,
@@ -83,18 +84,65 @@ function init() {
     floor.receiveShadow = true;
     scene.add(floor);
 
+    var otherTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
+    otherTexture.wrapS = otherTexture.wrapT = THREE.RepeatWrapping;
+    otherTexture.repeat.set( 4, 4 );
+
     other = new Physijs.BoxMesh(
         new THREE.CubeGeometry(500, 5, 500),
         Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: floorTexture }),
+            new THREE.MeshBasicMaterial({ map: otherTexture }),
             10,
             0
         ),
         0
     );
     other.position.setY(100);
-    other.position.setX(1000);
+    other.position.setX(300);
     scene.add(other);
+    other.castShadow = true;
+    other.receiveShadow = true;
+
+    /*constraint = new Physijs.SliderConstraint(
+        other,
+        null,
+        new THREE.Vector3( 300, 100, 0 ),
+        new THREE.Vector3( 1, 0, 0 )
+    );
+    scene.addConstraint(constraint);
+
+    constraint.setLimits(
+        -300,
+        300,
+        null,
+        null
+    );
+    constraint.setRestitution(
+        0.8,
+        null
+    );
+    constraint.enableLinearMotor(10, 1);*/
+
+
+    var dafuqTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
+    dafuqTexture.wrapS = dafuqTexture.wrapT = THREE.RepeatWrapping;
+    dafuqTexture.repeat.set( 4, 4 );
+
+    dafuq = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(300, 5, 300),
+        Physijs.createMaterial(
+            new THREE.MeshBasicMaterial({ map: dafuqTexture }),
+            10,
+            0
+        ),
+        0
+    );
+    dafuq.position.setY(100);
+    dafuq.position.setX(-500);
+    dafuq.position.setZ(400);
+    scene.add(dafuq);
+    dafuq.castShadow = true;
+    dafuq.receiveShadow = true;
 
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
@@ -108,6 +156,7 @@ function init() {
         ),
         1000
     );
+    mesh.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
     mesh.castShadow = true;
     mesh.position.set(0, 50, 0);
     scene.add(mesh);
@@ -129,7 +178,7 @@ function init() {
     var light = new THREE.DirectionalLight();
     light.castShadow = true;
     light.shadowDarkness = 0.5;
-    //light.shadowCameraVisible = true;
+    light.shadowCameraVisible = true;
     light.position.set(1000, 1000, 1000);
     scene.add(light);
 
@@ -206,6 +255,7 @@ function render() {
 
     updateInput();
     animate();
+
     stats.update();
     controls.center = mesh.position;
     controls.update();
@@ -222,9 +272,18 @@ function animate() {
     other.__dirtyPosition = true;
 
     if(other.position.x < 0) course = 1;
-    if(other.position.x > 1000) course = -1;
+    if(other.position.x > 300) course = -1;
 
     other.position.x += 3 * course;
+
+
+    /*dafuq.__dirtyPosition = true;
+
+    if(dafuq.position.y > 300) courseDafuq = -1;
+    if(dafuq.position.y < 0) courseDafuq = 1;
+
+    dafuq.position.y += 5 * courseDafuq;*/
+
 
 }
 
@@ -253,7 +312,7 @@ function updateInput() {
         dirCamera.y = 0;
         mesh.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
     } else if(keyboard.pressed('space') && Math.abs(mesh.getLinearVelocity().y < 10)) {
-        mesh.applyCentralForce(new THREE.Vector3(0, 1e9 * delta * 2, 0));
+        mesh.applyCentralForce(new THREE.Vector3(0, 1e8 * delta * 2.5, 0));
     }
 
 }
