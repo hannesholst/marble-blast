@@ -7,7 +7,7 @@ $(document).ready(function() {
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course, test, nice;
+    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course, test, nice, again;
     var texture_placeholder;
 
     // initialize game
@@ -101,6 +101,15 @@ function init() {
     other.castShadow = true;
     other.receiveShadow = true;
 
+    test = new Physijs.DOFConstraint(
+        other, null, other.position
+    );
+    scene.addConstraint(test);
+    test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
+    test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+
     var dafuqTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
     dafuqTexture.wrapS = dafuqTexture.wrapT = THREE.RepeatWrapping;
     dafuqTexture.repeat.set( 4, 4 );
@@ -112,16 +121,23 @@ function init() {
             10,
             0
         ),
-        0
+        1000
     );
-    dafuq.position.setY(100);
+    dafuq.position.setY(0);
     dafuq.position.setX(-500);
     dafuq.position.setZ(400);
     scene.add(dafuq);
     dafuq.castShadow = true;
     dafuq.receiveShadow = true;
 
-
+    again = new Physijs.DOFConstraint(
+        dafuq, null, dafuq.position
+    );
+    scene.addConstraint(again);
+    again.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    again.setLinearUpperLimit(new THREE.Vector3(0, 400, 0));
+    again.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    again.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
     /*test = new Physijs.SliderConstraint(
         other, null, other.position, new THREE.Vector3(0, 1.5, 0)
@@ -138,14 +154,7 @@ function init() {
 
     console.log(test);*/
 
-    test = new Physijs.DOFConstraint(
-        other, null, other.position
-    );
-    scene.addConstraint(test);
-    test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
-    test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+
 
 
 
@@ -272,19 +281,17 @@ function render() {
 
 }
 var dir = 1;
+var dirAgain = 1;
 function animate() {
 
-    other.setLinearVelocity({x: 200 * dir, y: 0, z: 0});
-    //other.applyCentralForce(new THREE.Vector3(dir * 1e5, 0, 0));
+    other.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
     if(Math.ceil(other.position.x) > 350) dir = -1;
     if(Math.ceil(other.position.x) < 50) dir = 1;
 
-    /*other.__dirtyPosition = true;
+    dafuq.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
+    if(Math.ceil(dafuq.position.y) > 350) dirAgain = -1;
+    if(Math.ceil(dafuq.position.y) < 50) dirAgain = 1;
 
-    if(other.position.x < 0) course = 1;
-    if(other.position.x > 300) course = -1;
-
-    other.position.x += 3 * course;*/
 
 }
 
