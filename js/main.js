@@ -123,30 +123,30 @@ function init() {
 
 
 
-    test = new Physijs.SliderConstraint(
-        other, null, { x: 0, y: 0, z: 0}, new THREE.Vector3(0, 0, 1)
+    /*test = new Physijs.SliderConstraint(
+        other, null, other.position, new THREE.Vector3(0, 1.5, 0)
     );
     scene.addConstraint(test);
     test.setLimits(
-        0,
-        500,
+        -300,
+        300,
         0,
         0
     );
-    test.setRestitution(0.5, 1);
-    test.enableLinearMotor(500, 1);
+    test.setRestitution(1);
+    test.enableLinearMotor(100000, 10);
 
-    console.log(test);
+    console.log(test);*/
 
-    /*test = new Physijs.DOFConstraint(
+    test = new Physijs.DOFConstraint(
         other, null, other.position
     );
     scene.addConstraint(test);
     test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setLinearUpperLimit(new THREE.Vector3(0, 300, 0));
+    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
     test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
-    console.log(test);*/
+
 
 
 
@@ -271,8 +271,13 @@ function render() {
     requestAnimationFrame(render);
 
 }
-
+var dir = 1;
 function animate() {
+
+    other.setLinearVelocity({x: 200 * dir, y: 0, z: 0});
+    //other.applyCentralForce(new THREE.Vector3(dir * 1e5, 0, 0));
+    if(Math.ceil(other.position.x) > 350) dir = -1;
+    if(Math.ceil(other.position.x) < 50) dir = 1;
 
     /*other.__dirtyPosition = true;
 
