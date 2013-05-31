@@ -7,7 +7,7 @@ $(document).ready(function() {
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course, test, nice, again;
+    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course, test, nice, again, platform;
     var texture_placeholder;
 
     // initialize game
@@ -66,23 +66,44 @@ function init() {
     keyboard = new KeyboardState();
     clock = new THREE.Clock(true);
 
-    var floorTexture = THREE.ImageUtils.loadTexture('img/wood.png');
+    var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set( 8, 8 );
+    floorTexture.repeat.set( 32, 32 );
+
+    var floorMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: floorTexture }),
+        1,
+        0
+    );
+
+    var sideTexture = THREE.ImageUtils.loadTexture('img/edge_white2.jpg');
+    sideTexture.wrapS = sideTexture.wrapT = THREE.RepeatWrapping;
+    sideTexture.repeat.set( 150, 1 );
+
+    var sideMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: sideTexture }),
+        1,
+        0
+    );
+
+    var materials = [
+        sideMaterial,
+        sideMaterial,
+        floorMaterial,
+        floorMaterial,
+        sideMaterial,
+        sideMaterial
+    ];
 
     var floor = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(3000, 5, 3000),
-        Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: floorTexture }),
-            1,
-            0
-        ),
+        new THREE.CubeGeometry(8000, 50, 8000),
+        new THREE.MeshFaceMaterial(materials),
         0
     );
     floor.receiveShadow = true;
     scene.add(floor);
 
-    var otherTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
+    var otherTexture = THREE.ImageUtils.loadTexture('img/wood.png');
     otherTexture.wrapS = otherTexture.wrapT = THREE.RepeatWrapping;
     otherTexture.repeat.set( 4, 4 );
 
@@ -93,7 +114,7 @@ function init() {
             10,
             0
         ),
-        1000
+        10000
     );
     other.position.setY(100);
     other.position.setX(0);
@@ -110,28 +131,58 @@ function init() {
     test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
-    var dafuqTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
-    dafuqTexture.wrapS = dafuqTexture.wrapT = THREE.RepeatWrapping;
-    dafuqTexture.repeat.set( 4, 4 );
 
-    dafuq = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(300, 5, 300),
-        Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: dafuqTexture }),
-            10,
-            0
-        ),
-        1000
+    var platformTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
+    platformTexture.wrapS = platformTexture.wrapT = THREE.RepeatWrapping;
+    platformTexture.offset.set(0.5, 0.5);
+    platformTexture.repeat.set( 2, 2 );
+
+    var platformMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: platformTexture }),
+        1,
+        0
     );
-    dafuq.position.setY(0);
-    dafuq.position.setX(-500);
-    dafuq.position.setZ(400);
-    scene.add(dafuq);
-    dafuq.castShadow = true;
-    dafuq.receiveShadow = true;
+
+    var sideTexture = THREE.ImageUtils.loadTexture('img/edge_white2.jpg');
+    sideTexture.wrapS = sideTexture.wrapT = THREE.RepeatWrapping;
+    sideTexture.repeat.set( 20, 1 );
+
+    var sideMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: sideTexture }),
+        0,
+        0
+    );
+
+    var materials = [
+        sideMaterial,
+        sideMaterial,
+        platformMaterial,
+        platformMaterial,
+        sideMaterial,
+        sideMaterial
+    ];
+
+    platform = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(300, 25, 300),
+        new THREE.MeshFaceMaterial(materials),
+        10000
+    );
+
+    platform.position.setY(0);
+    platform.position.setX(-500);
+    platform.position.setZ(400);
+    scene.add(platform);
+    platform.castShadow = true;
+    platform.receiveShadow = true;
+
+    stuff = THREE.SceneUtils.createMultiMaterialObject( new THREE.CubeGeometry(300, 25, 300), materials );
+    stuff.position.setX(100);
+    stuff.position.setY(100);
+    stuff.position.setZ(400);
+    scene.add(stuff);
 
     again = new Physijs.DOFConstraint(
-        dafuq, null, dafuq.position
+        platform, null, platform.position
     );
     scene.addConstraint(again);
     again.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
@@ -288,9 +339,9 @@ function animate() {
     if(Math.ceil(other.position.x) > 350) dir = -1;
     if(Math.ceil(other.position.x) < 50) dir = 1;
 
-    dafuq.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
-    if(Math.ceil(dafuq.position.y) > 350) dirAgain = -1;
-    if(Math.ceil(dafuq.position.y) < 50) dirAgain = 1;
+    platform.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
+    if(Math.ceil(platform.position.y) > 350) dirAgain = -1;
+    if(Math.ceil(platform.position.y) < 50) dirAgain = 1;
 
 
 }
@@ -319,7 +370,6 @@ function updateInput() {
         var dirCamera = dirCameraZ.sub(camera.position);
         dirCamera.y = 0;
         mesh.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
-        console.log(other.position);
     } else if(keyboard.pressed('space') && Math.abs(mesh.getLinearVelocity().y < 10)) {
         mesh.applyCentralForce(new THREE.Vector3(0, 1e8 * delta * 2.5, 0));
     }
