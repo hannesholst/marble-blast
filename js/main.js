@@ -7,8 +7,10 @@ $(document).ready(function() {
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var constraint, scene, camera, renderer, geometry, controls, material, mesh, keyboard, clock, stats, other, course, test, nice, again, platform;
+    var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, course, test, nice, again, platform;
     var texture_placeholder;
+    var allowJump = false; // warning!!!
+    var allowMovement = false;
 
     // initialize game
     init();
@@ -58,7 +60,7 @@ function init() {
 
     var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set( 16, 16 );
+    floorTexture.repeat.set( 10, 10 );
 
     var floorMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: floorTexture }),
@@ -161,12 +163,31 @@ function init() {
     other.castShadow = true;
     other.receiveShadow = true;
 
+
+    var gemTexture = THREE.ImageUtils.loadTexture('img/grid_cool4.jpg');
+    gemTexture.wrapS = gemTexture.wrapT = THREE.RepeatWrapping;
+    gemTexture.repeat.set( 1, 1 );
+
+    var gemMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: gemTexture }),
+        0,
+        0
+    );
+
+    var materials = [
+        gemMaterial,
+        gemMaterial,
+        gemMaterial,
+        gemMaterial,
+        gemMaterial,
+        gemMaterial
+    ];
     gem = new Physijs.BoxMesh(
-        new THREE.OctahedronGeometry(30, 0),
-        new THREE.MeshBasicMaterial({ map: sideTexture }),
+        new THREE.CubeGeometry(30, 30, 30),
+        new THREE.MeshFaceMaterial(materials),
         1000
     );
-    gem.position.set(-200, 100, 300)
+    gem.position.set(-200, 60, 400)
     scene.add(gem);
 
     gemCon = new Physijs.DOFConstraint(
@@ -175,10 +196,10 @@ function init() {
     scene.addConstraint(gemCon);
     gemCon.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
     gemCon.setLinearUpperLimit(new THREE.Vector3(0, 0, 0));
-    gemCon.setAngularLowerLimit(new THREE.Vector3(0, -Math.PI, 0));
-    gemCon.setAngularUpperLimit(new THREE.Vector3(0, Math.PI, 0));
-    gemCon.configureAngularMotor(1, -Math.PI, Math.PI, 100, 1);
-    gemCon.enableAngularMotor(1);
+    gemCon.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    gemCon.setAngularUpperLimit(new THREE.Vector3(2*Math.PI, 0, 2*Math.PI));
+    gemCon.configureAngularMotor( 0, 0, 2*Math.PI, 1, 1000 );
+    gemCon.configureAngularMotor( 2, 0, 2*Math.PI, 1, 1000 );
 
     test = new Physijs.DOFConstraint(
         other, null, other.position
@@ -191,7 +212,7 @@ function init() {
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
 
-    mesh = new Physijs.SphereMesh(
+    marble = new Physijs.SphereMesh(
         new THREE.SphereGeometry(16, 32, 32),
         Physijs.createMaterial(
             new THREE.MeshBasicMaterial({ map: boxTexture }),
@@ -200,11 +221,15 @@ function init() {
         ),
         1000
     );
-    mesh.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
-    mesh.castShadow = true;
-    mesh.position.set(-200, 50, 200);
-    scene.add(mesh);
-    mesh.setDamping(null, 0.96);
+    marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
+    marble.castShadow = true;
+    marble.position.set(-200, 50, 200);
+    scene.add(marble);
+    marble.setDamping(null, 0.96); // after add to scene!!!
+    marble.addEventListener('collision', function(other, linVelocity, angVelocity) {
+        allowJump = true;
+        allowMovement = true;
+    });
 
     scene.add(camera);
     //camera.lookAt(mesh.position);
@@ -309,7 +334,7 @@ function render() {
     animate();
 
     stats.update();
-    controls.center = mesh.position;
+    controls.center = marble.position;
     controls.update();
 
     scene.simulate();
@@ -321,6 +346,11 @@ function render() {
 var dir = 1;
 var dirAgain = 1;
 function animate() {
+
+    gemCon.enableAngularMotor(0);
+    gemCon.enableAngularMotor(2);
+    //gem.setAngularVelocity({x: 0, y: 100, z: 0});
+
 
     other.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
     if(Math.ceil(other.position.x) > 350) dir = -1;
@@ -352,13 +382,17 @@ function updateInput() {
             v = new THREE.Vector3( 1, 0, 0 );
     }
 
-    if(v !== undefined) {
+    if(v !== undefined && allowMovement) {
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
         var dirCamera = dirCameraZ.sub(camera.position);
         dirCamera.y = 0;
-        mesh.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
-    } else if(keyboard.pressed('space') && Math.abs(mesh.getLinearVelocity().y < 10)) {
-        mesh.applyCentralForce(new THREE.Vector3(0, 1e8 * delta * 10, 0));
+        marble.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
+    } else if(keyboard.pressed('space') && allowJump) {
+        allowJump = false;
+        allowMovement = false;
+        marble.applyCentralImpulse(new THREE.Vector3(0, 0.5 * 1e6, 0));
+        console.log('jump');
     }
+    //Math.abs(marble.getLinearVelocity().y < 10) // may be removed
 
 }
