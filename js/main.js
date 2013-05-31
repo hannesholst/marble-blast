@@ -34,31 +34,21 @@ function init() {
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
 
-    /*texture_placeholder = document.createElement( 'canvas' );
-    texture_placeholder.width = 128;
-    texture_placeholder.height = 128;
-
-    var context = texture_placeholder.getContext( '2d' );
-    context.fillStyle = 'rgb( 200, 200, 200 )';
-    context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
-
     var materials = [
-
-        loadTexture( 'img/skybox/sky_rt.jpg' ), // right
-        loadTexture( 'img/skybox/sky_lf.jpg' ), // left
-        loadTexture( 'img/skybox/sky_up.jpg' ), // top
-        loadTexture( 'img/skybox/sky_dn.jpg' ), // bottom
-        loadTexture( 'img/skybox/sky_fr.jpg' ), // back
-        loadTexture( 'img/skybox/sky_bk.jpg' )  // front
-
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_rt.jpg') })),
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_lf.jpg') })),
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_up.jpg') })),
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_dn.jpg') })),
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_fr.jpg') })),
+        Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_bk.jpg') }))
     ];
-    test = new THREE.Mesh( new THREE.CubeGeometry( 3000, 3000, 3000, 7, 7, 7 ), new THREE.MeshFaceMaterial( materials ) );
-    test.scale.x = - 1;
-    scene.add( test );*/
+    skybox = new THREE.Mesh( new THREE.CubeGeometry( 100000, 100000, 100000), new THREE.MeshFaceMaterial( materials ) );
+    skybox.scale.x = - 1;
+    scene.add(skybox);
 
 
     // add camera
-    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 10000);
+    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 100000);
     camera.position.z = 375;
     camera.position.y = 75;
     camera.position.x = -150;
@@ -68,7 +58,7 @@ function init() {
 
     var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set( 32, 32 );
+    floorTexture.repeat.set( 16, 16 );
 
     var floorMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: floorTexture }),
@@ -78,7 +68,7 @@ function init() {
 
     var sideTexture = THREE.ImageUtils.loadTexture('img/edge_white2.jpg');
     sideTexture.wrapS = sideTexture.wrapT = THREE.RepeatWrapping;
-    sideTexture.repeat.set( 150, 1 );
+    sideTexture.repeat.set( 100, 1 );
 
     var sideMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: sideTexture }),
@@ -96,40 +86,16 @@ function init() {
     ];
 
     var floor = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(8000, 50, 8000),
+        new THREE.CubeGeometry(3000, 50, 3000),
         new THREE.MeshFaceMaterial(materials),
         0
     );
     floor.receiveShadow = true;
     scene.add(floor);
 
-    var otherTexture = THREE.ImageUtils.loadTexture('img/wood.png');
-    otherTexture.wrapS = otherTexture.wrapT = THREE.RepeatWrapping;
-    otherTexture.repeat.set( 4, 4 );
 
-    other = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(500, 5, 500),
-        Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: otherTexture }),
-            10,
-            0
-        ),
-        10000
-    );
-    other.position.setY(100);
-    other.position.setX(0);
-    scene.add(other);
-    other.castShadow = true;
-    other.receiveShadow = true;
 
-    test = new Physijs.DOFConstraint(
-        other, null, other.position
-    );
-    scene.addConstraint(test);
-    test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
-    test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+
 
 
     var platformTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
@@ -143,9 +109,9 @@ function init() {
         0
     );
 
-    var sideTexture = THREE.ImageUtils.loadTexture('img/edge_white2.jpg');
+    var sideTexture = THREE.ImageUtils.loadTexture('img/stripe_caution.jpg');
     sideTexture.wrapS = sideTexture.wrapT = THREE.RepeatWrapping;
-    sideTexture.repeat.set( 20, 1 );
+    sideTexture.repeat.set( 5, 1 );
 
     var sideMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: sideTexture }),
@@ -175,12 +141,6 @@ function init() {
     platform.castShadow = true;
     platform.receiveShadow = true;
 
-    stuff = THREE.SceneUtils.createMultiMaterialObject( new THREE.CubeGeometry(300, 25, 300), materials );
-    stuff.position.setX(100);
-    stuff.position.setY(100);
-    stuff.position.setZ(400);
-    scene.add(stuff);
-
     again = new Physijs.DOFConstraint(
         platform, null, platform.position
     );
@@ -190,25 +150,44 @@ function init() {
     again.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     again.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
-    /*test = new Physijs.SliderConstraint(
-        other, null, other.position, new THREE.Vector3(0, 1.5, 0)
+    other = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(500, 5, 500),
+        new THREE.MeshFaceMaterial(materials),
+        10000
+    );
+    other.position.setY(100);
+    other.position.setX(0);
+    scene.add(other);
+    other.castShadow = true;
+    other.receiveShadow = true;
+
+    gem = new Physijs.BoxMesh(
+        new THREE.OctahedronGeometry(30, 0),
+        new THREE.MeshBasicMaterial({ map: sideTexture }),
+        1000
+    );
+    gem.position.set(-200, 100, 300)
+    scene.add(gem);
+
+    gemCon = new Physijs.DOFConstraint(
+        gem, null, gem.position
+    );
+    scene.addConstraint(gemCon);
+    gemCon.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    gemCon.setLinearUpperLimit(new THREE.Vector3(0, 0, 0));
+    gemCon.setAngularLowerLimit(new THREE.Vector3(0, -Math.PI, 0));
+    gemCon.setAngularUpperLimit(new THREE.Vector3(0, Math.PI, 0));
+    gemCon.configureAngularMotor(1, -Math.PI, Math.PI, 100, 1);
+    gemCon.enableAngularMotor(1);
+
+    test = new Physijs.DOFConstraint(
+        other, null, other.position
     );
     scene.addConstraint(test);
-    test.setLimits(
-        -300,
-        300,
-        0,
-        0
-    );
-    test.setRestitution(1);
-    test.enableLinearMotor(100000, 10);
-
-    console.log(test);*/
-
-
-
-
-
+    test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
+    test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
 
@@ -217,7 +196,7 @@ function init() {
         Physijs.createMaterial(
             new THREE.MeshBasicMaterial({ map: boxTexture }),
             1,
-            1
+            0
         ),
         1000
     );
@@ -240,12 +219,20 @@ function init() {
     controls.minDistance = 800;
     controls.maxDistance = 800;
 
-    var light = new THREE.DirectionalLight();
+    var light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(1000, 1000, 1000);
     light.castShadow = true;
     light.shadowDarkness = 0.5;
     light.shadowCameraVisible = true;
-    light.position.set(1000, 1000, 1000);
+    //light.shadowCameraNear = 1000;
+    //light.shadowCameraFar = 5000;
+    light.shadowCameraLeft = -1000;
+    light.shadowCameraRight = 1000;
+    light.shadowCameraBottom = -1000;
+    light.shadowCameraTop = 1000;
+    console.log(light);
     scene.add(light);
+
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize($(window).width(), $(window).height());
@@ -371,7 +358,7 @@ function updateInput() {
         dirCamera.y = 0;
         mesh.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
     } else if(keyboard.pressed('space') && Math.abs(mesh.getLinearVelocity().y < 10)) {
-        mesh.applyCentralForce(new THREE.Vector3(0, 1e8 * delta * 2.5, 0));
+        mesh.applyCentralForce(new THREE.Vector3(0, 1e8 * delta * 10, 0));
     }
 
 }
