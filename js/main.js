@@ -9,8 +9,7 @@ $(document).ready(function() {
     // set global variables
     var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, course, test, nice, again, platform;
     var texture_placeholder;
-    var allowJump = false; // warning!!!
-    var allowMovement = false;
+    var allowJump, allowMovement; // warning!!!
 
     // initialize game
     init();
@@ -99,35 +98,38 @@ function init() {
 
 
 
-
+    // platform texture
     var platformTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
     platformTexture.wrapS = platformTexture.wrapT = THREE.RepeatWrapping;
     platformTexture.offset.set(0.5, 0.5);
     platformTexture.repeat.set( 2, 2 );
 
+    // platform material
     var platformMaterial = Physijs.createMaterial(
         new THREE.MeshBasicMaterial({ map: platformTexture }),
         1,
         0
     );
 
-    var sideTexture = THREE.ImageUtils.loadTexture('img/stripe_caution.jpg');
-    sideTexture.wrapS = sideTexture.wrapT = THREE.RepeatWrapping;
-    sideTexture.repeat.set( 5, 1 );
+    // platform side texture
+    var platformSideTexture = THREE.ImageUtils.loadTexture('img/stripe_caution.jpg');
+    platformSideTexture.wrapS = platformSideTexture.wrapT = THREE.RepeatWrapping;
+    platformSideTexture.repeat.set( 5, 1 );
 
-    var sideMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: sideTexture }),
+    // platform side material
+    var platformSideMaterial = Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: platformSideTexture }),
         0,
         0
     );
 
-    var materials = [
-        sideMaterial,
-        sideMaterial,
+    var platformMaterials = [
+        platformSideMaterial,
+        platformSideMaterial,
         platformMaterial,
         platformMaterial,
-        sideMaterial,
-        sideMaterial
+        platformSideMaterial,
+        platformSideMaterial
     ];
 
     platform = new Physijs.BoxMesh(
@@ -226,10 +228,13 @@ function init() {
     marble.position.set(-200, 50, 200);
     scene.add(marble);
     marble.setDamping(null, 0.96); // after add to scene!!!
-    marble.addEventListener('collision', function(other, linVelocity, angVelocity) {
+
+    marble.addEventListener('collision', function() {
         allowJump = true;
         allowMovement = true;
     });
+
+
 
     scene.add(camera);
     //camera.lookAt(mesh.position);
@@ -388,11 +393,16 @@ function updateInput() {
         dirCamera.y = 0;
         marble.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
     } else if(keyboard.pressed('space') && allowJump) {
+        console.log("ready to jump");
+        marble.applyCentralImpulse(new THREE.Vector3(0, 0.5 * 1e6, 0));
         allowJump = false;
         allowMovement = false;
-        marble.applyCentralImpulse(new THREE.Vector3(0, 0.5 * 1e6, 0));
-        console.log('jump');
+        /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
+        camera.up.set(0, -1, 0);*/
     }
+
+
+
     //Math.abs(marble.getLinearVelocity().y < 10) // may be removed
 
 }

@@ -38,6 +38,7 @@ KeyboardState	= function()
     // to store the current state
     this.keyCodes	= {};
     this.modifiers	= {};
+    this.spaceDown = false;
 
     // create callback to bind/unbind keyboard events
     var self	= this;
@@ -86,6 +87,15 @@ KeyboardState.prototype._onKeyChange	= function(event, pressed)
     // update this.keyCodes
     var keyCode		= event.keyCode;
     this.keyCodes[keyCode]	= pressed;
+
+    /*if(keyCode == 32) {
+        this.keyCodes[keyCode] = true;
+        this.spaceDown = pressed;
+        console.log("Pressed space");
+        console.log("Down", this.spaceDown);
+    } else {
+
+    }*/
 
     // update this.modifiers
     this.modifiers['shift']= event.shiftKey;
