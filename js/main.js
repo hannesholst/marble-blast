@@ -1,13 +1,14 @@
 // when DOM loaded
 $(document).ready(function() {
 
+
     // load Physijs worker & ammo
     'use strict';
     Physijs.scripts.worker = 'js/physijs_worker.js';
     Physijs.scripts.ammo = 'ammo.js';
 
     // set global variables
-    var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, course, test, nice, again, platform;
+    var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, test, nice, again, platform;
     var texture_placeholder;
     var allowJump, allowMovement; // warning!!!
 
@@ -22,19 +23,94 @@ $(document).ready(function() {
 // initialize game
 function init() {
 
-
-
-    course = -1;
-
+    // display FPS stats
     stats = new Stats();
     stats.domElement.style.position = 'absolute';
     stats.domElement.style.top = '0px';
     $('#container').append(stats.domElement);
 
+    // add renderer
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize($(window).width(), $(window).height());
+    renderer.shadowMapEnabled = true;
+    //renderer.shadowMapSoft = true;
+    //renderer.antialias = true;
+
+    $('#container').append(renderer.domElement);
+
     // add scene
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
 
+    // add camera
+    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 100000);
+    camera.position.z = 375;
+    camera.position.y = 75;
+    camera.position.x = -150;
+    scene.add(camera);
+
+    // add keyboard controls
+    keyboard = new KeyboardState();
+
+    // add clock for delta timing
+    clock = new THREE.Clock(true);
+
+    // add controls
+    controls = new THREE.OrbitControls(camera);
+    controls.userRotateSpeed = 5;
+    controls.userPanSpeed = 100;
+    //controls.minPolarAngle = (2/5)*Math.PI;
+    controls.maxPolarAngle = (2/5)*Math.PI;
+    controls.minDistance = 600;
+    controls.maxDistance = 600;
+
+    // add light
+    var light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(1000, 1000, 1000);
+    light.castShadow = true;
+    light.shadowDarkness = 0.5;
+    light.shadowCameraVisible = true;
+    //light.shadowCameraNear = 1000;
+    //light.shadowCameraFar = 5000;
+    light.shadowCameraLeft = -1000;
+    light.shadowCameraRight = 1000;
+    light.shadowCameraBottom = -1000;
+    light.shadowCameraTop = 1000;
+    scene.add(light);
+
+    //window.addEventListener( 'resize', onWindowResize, false ); // fix this crap!
+
+    // toggle full screen
+    THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+    var debugaxis = function(axisLength){
+        //Shorten the vertex function
+        function v(x,y,z){
+            return new THREE.Vertex(new THREE.Vector3(x,y,z));
+        }
+
+        //Create axis (point1, point2, colour)
+        function createAxis(p1, p2, color){
+            var line, lineGeometry = new THREE.Geometry(),
+                lineMat = new THREE.LineBasicMaterial({color: color, lineWidth: 1});
+            lineGeometry.vertices.push(p1, p2);
+            line = new THREE.Line(lineGeometry, lineMat);
+            scene.add(line);
+        }
+
+        createAxis(v(-axisLength, 0, 0), v(axisLength, 0, 0), 0xFF0000);
+        createAxis(v(0, -axisLength, 0), v(0, axisLength, 0), 0x00FF00);
+        createAxis(v(0, 0, -axisLength), v(0, 0, axisLength), 0x0000FF);
+    };
+
+    //To use enter the axis length
+    debugaxis(10000);
+
+
+
+
+
+    // add skybox
     var materials = [
         Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_rt.jpg') })),
         Physijs.createMaterial(new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/skybox/sky_lf.jpg') })),
@@ -47,15 +123,6 @@ function init() {
     skybox.scale.x = - 1;
     scene.add(skybox);
 
-
-    // add camera
-    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 100000);
-    camera.position.z = 375;
-    camera.position.y = 75;
-    camera.position.x = -150;
-
-    keyboard = new KeyboardState();
-    clock = new THREE.Clock(true);
 
     var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
@@ -236,68 +303,7 @@ function init() {
 
 
 
-    scene.add(camera);
-    //camera.lookAt(mesh.position);
 
-
-    // add controls
-    controls = new THREE.OrbitControls(camera);
-    controls.userRotateSpeed = 3;
-    controls.userPanSpeed = 100;
-    //controls.minPolarAngle = (2/5)*Math.PI;
-    controls.maxPolarAngle = (2/5)*Math.PI;
-    controls.minDistance = 800;
-    controls.maxDistance = 800;
-
-    var light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(1000, 1000, 1000);
-    light.castShadow = true;
-    light.shadowDarkness = 0.5;
-    light.shadowCameraVisible = true;
-    //light.shadowCameraNear = 1000;
-    //light.shadowCameraFar = 5000;
-    light.shadowCameraLeft = -1000;
-    light.shadowCameraRight = 1000;
-    light.shadowCameraBottom = -1000;
-    light.shadowCameraTop = 1000;
-    console.log(light);
-    scene.add(light);
-
-
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize($(window).width(), $(window).height());
-    renderer.shadowMapEnabled = true;
-    //renderer.shadowMapSoft = true;
-    //renderer.antialias = true;
-
-    $('#container').append(renderer.domElement);
-
-    //window.addEventListener( 'resize', onWindowResize, false );
-
-    THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
-
-    var debugaxis = function(axisLength){
-        //Shorten the vertex function
-        function v(x,y,z){
-            return new THREE.Vertex(new THREE.Vector3(x,y,z));
-        }
-
-        //Create axis (point1, point2, colour)
-        function createAxis(p1, p2, color){
-            var line, lineGeometry = new THREE.Geometry(),
-                lineMat = new THREE.LineBasicMaterial({color: color, lineWidth: 1});
-            lineGeometry.vertices.push(p1, p2);
-            line = new THREE.Line(lineGeometry, lineMat);
-            scene.add(line);
-        }
-
-        createAxis(v(-axisLength, 0, 0), v(axisLength, 0, 0), 0xFF0000);
-        createAxis(v(0, -axisLength, 0), v(0, axisLength, 0), 0x00FF00);
-        createAxis(v(0, 0, -axisLength), v(0, 0, axisLength), 0x0000FF);
-    };
-
-//To use enter the axis length
-    debugaxis(10000);
 }
 
 function loadTexture( path ) {
@@ -406,3 +412,4 @@ function updateInput() {
     //Math.abs(marble.getLinearVelocity().y < 10) // may be removed
 
 }
+
