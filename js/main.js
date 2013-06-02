@@ -11,6 +11,7 @@ $(document).ready(function() {
     var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, test, nice, again, platform;
     var texture_placeholder;
     var allowJump, allowMovement; // warning!!!
+    var punch1;
 
     // initialize game
     init();
@@ -49,7 +50,7 @@ function init() {
     renderer.setSize($(window).width(), $(window).height());
     renderer.shadowMapEnabled = true;
     //renderer.shadowMapSoft = true;
-    //renderer.antialias = true;
+    renderer.antialias = true;
 
     $('#container').append(renderer.domElement);
 
@@ -196,29 +197,115 @@ function init() {
         new THREE.MeshFaceMaterial(platformMaterials),
         10000
     );
-
-    platform1.position.set(-125, 0, 375);
+    platform1.position.set(-125, 15, 375);
     scene.add(platform1);
 
-    again = new Physijs.DOFConstraint(
+    platform1Constraint = new Physijs.DOFConstraint(
         platform1, null, platform1.position
     );
-    scene.addConstraint(again);
-    again.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    again.setLinearUpperLimit(new THREE.Vector3(0, 400, 0));
-    again.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
-    again.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+    scene.addConstraint(platform1Constraint);
+    platform1Constraint.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    platform1Constraint.setLinearUpperLimit(new THREE.Vector3(0, 400, 0));
+    platform1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    platform1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
-    other = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(500, 5, 500),
-        new THREE.MeshFaceMaterial(materials),
+    platform2 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 20, 250),
+        new THREE.MeshFaceMaterial(platformMaterials),
         10000
     );
-    other.position.setY(100);
-    other.position.setX(0);
-    //scene.add(other);
-    //other.castShadow = true;
-    //other.receiveShadow = true;
+    platform2.position.set(375, 360, -125);
+    scene.add(platform2);
+
+    platform2Constraint = new Physijs.DOFConstraint(
+        platform2, null, platform2.position
+    );
+    scene.addConstraint(platform2Constraint);
+    platform2Constraint.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    platform2Constraint.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
+    platform2Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    platform2Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+
+    // add floor2
+    var floor2Material = loadMaterial('grid_cool.jpg', 1, 4, 0, 0, 1, 0.8);
+    var floor2FrontSideMaterial = loadMaterial('edge_white2.jpg', 20, 1, 0, 0, 0, 0);
+    var floor2LeftSideMaterial = loadMaterial('edge_white2.jpg', 5, 1, 0, 0, 0, 0);
+
+    var floor2Materials = [
+        floor2FrontSideMaterial,
+        floor2FrontSideMaterial,
+        floor2Material,
+        floor2Material,
+        floor2LeftSideMaterial,
+        floor2LeftSideMaterial
+    ];
+
+    var floor2 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 10, 1000),
+        new THREE.MeshFaceMaterial(floor2Materials),
+        0
+    );
+    floor2.position.set(1025, 360, -500);
+    scene.add(floor2);
+
+
+    var punch1Material = loadMaterial('grid_neutral3.jpg', 1, 1, 0, 0, 0, 0);
+    var punch1FrontMaterial = loadMaterial('pattern_neutral2.jpg', 4, 4, 0, 0, 0, 0);
+    var punch1Materials = [
+        punch1FrontMaterial,
+        punch1FrontMaterial,
+        punch1Material,
+        punch1Material,
+        punch1Material,
+        punch1Material
+    ];
+
+    punch1 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 250, 250),
+        new THREE.MeshFaceMaterial(punch1Materials),
+        10000
+    );
+    punch1.position.set(1400, 500, -625);
+    scene.add(punch1);
+
+    punch1Constraint = new Physijs.DOFConstraint(
+        punch1, null, punch1.position
+    );
+    scene.addConstraint(punch1Constraint);
+    punch1Constraint.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+    punch1Constraint.setLinearUpperLimit(new THREE.Vector3(-1000, 0, 0));
+    punch1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+    punch1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
+
+
+
+
+    var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
+    marble = new Physijs.SphereMesh(
+        new THREE.SphereGeometry(16, 32, 32),
+        Physijs.createMaterial(
+            new THREE.MeshBasicMaterial({ map: boxTexture }),
+            1,
+            0.8
+        ),
+        1500
+    );
+    //marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
+    marble.castShadow = true;
+    marble.position.set(0, 500, 0);
+    scene.add(marble);
+    marble.setDamping(null, 0.96); // after add to scene!!!
+
+    marble.addEventListener('collision', function() {
+        allowJump = true;
+        allowMovement = true;
+    });
+
+
+
+
+
+
 
 
     var gemTexture = THREE.ImageUtils.loadTexture('img/grid_cool4.jpg');
@@ -267,27 +354,7 @@ function init() {
     test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));*/
 
-    var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
 
-    marble = new Physijs.SphereMesh(
-        new THREE.SphereGeometry(16, 32, 32),
-        Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: boxTexture }),
-            1,
-            0.8
-        ),
-        1500
-    );
-    marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
-    marble.castShadow = true;
-    marble.position.set(450, 50, 450);
-    scene.add(marble);
-    marble.setDamping(null, 0.96); // after add to scene!!!
-
-    marble.addEventListener('collision', function() {
-        allowJump = true;
-        allowMovement = true;
-    });
 
 
 
@@ -344,20 +411,23 @@ function render() {
 }
 var dir = 1;
 var dirAgain = 1;
+var dirPunch = 1;
 function animate() {
 
     gemCon.enableAngularMotor(0);
     gemCon.enableAngularMotor(2);
-    //gem.setAngularVelocity({x: 0, y: 100, z: 0});
 
+    punch1.setLinearVelocity({x: 300 * dirPunch, y: 0, z: 0});
+    if(Math.ceil(punch1.position.x) > 1390) dirPunch = -1;
+    if(Math.ceil(punch1.position.x) < 610) dirPunch = 1;
 
-    /*other.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
-    if(Math.ceil(other.position.x) > 350) dir = -1;
-    if(Math.ceil(other.position.x) < 50) dir = 1;*/
+    platform2.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
+    if(Math.ceil(platform2.position.x) > 770) dir = -1;
+    if(Math.ceil(platform2.position.x) < 380) dir = 1;
 
     platform1.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
-    if(Math.ceil(platform1.position.y) > 350) dirAgain = -1;
-    if(Math.ceil(platform1.position.y) < 50) dirAgain = 1;
+    if(Math.ceil(platform1.position.y) > 360) dirAgain = -1;
+    if(Math.ceil(platform1.position.y) < 16) dirAgain = 1;
 
 
 }
@@ -388,8 +458,8 @@ function updateInput() {
         marble.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
     } else if(keyboard.pressed('space') && allowJump) {
         console.log("ready to jump");
-        marble.applyCentralImpulse(new THREE.Vector3(0, 0.5 * 1e6, 0));
-        //allowJump = false;
+        marble.applyCentralImpulse(new THREE.Vector3(0, 1 * 1e6, 0));
+        allowJump = false;
         //allowMovement = false;
         /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
         camera.up.set(0, -1, 0);*/
