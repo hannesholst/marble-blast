@@ -14,7 +14,9 @@ $(document).ready(function() {
     var punch1;
 
     // initialize game
+    console.log("start init");
     init();
+    console.log("end init");
 
     // render game
     render();
@@ -39,6 +41,32 @@ function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution)
 // initialize game
 function init() {
 
+
+
+    gotgem = new Audio('sound/gotgem.wav');
+    gotgem.volume = 0.8;
+    spawn = new Audio('sound/spawn.wav');
+    trapdoor = new Audio('sound/trapdooropen.wav');
+
+    groovepolice = new Audio('sound/groovepolice.ogg');
+    groovepolice.volume = 0.2;
+    groovepolice.loop = true;
+
+    ready = new Audio('sound/ready.wav');
+    ready.volume = 0.2;
+    set = new Audio('sound/set.wav');
+    set.volume = 0.2;
+    go = new Audio('sound/go.wav');
+    set.volume = 0.3;
+
+
+    /*ready.play();
+    setTimeout(1500);
+    set.play();
+    setTimeout(1500);
+    go.play();*/
+    //spawn.play();
+
     // display FPS stats
     stats = new Stats();
     stats.domElement.style.position = 'absolute';
@@ -57,6 +85,15 @@ function init() {
     // add scene
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
+
+    var handleIntro = function() {
+        setTimeout(function() { ready.play(); }, 0);
+        setTimeout(function() { set.play(); }, 2000);
+        setTimeout(function() { go.play(); }, 3500);
+        setTimeout(function() { groovepolice.play(); }, 4500);
+        scene.removeEventListener('update', handleIntro, false);
+    };
+    scene.addEventListener('update', handleIntro, false);
 
     // add camera
     camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 100000);
@@ -259,11 +296,11 @@ function init() {
     ];
 
     punch1 = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(250, 250, 250),
+        new THREE.CubeGeometry(250, 125, 250),
         new THREE.MeshFaceMaterial(punch1Materials),
         10000
     );
-    punch1.position.set(1400, 500, -625);
+    punch1.position.set(1400, 438, -625);
     scene.add(punch1);
 
     punch1Constraint = new Physijs.DOFConstraint(
@@ -288,10 +325,14 @@ function init() {
     trap1 = new Physijs.BoxMesh(
         new THREE.CubeGeometry(250, 10, 250),
         new THREE.MeshFaceMaterial(trap1Materials),
-        1
+        100
     );
-    trap1.position.set(1275, 360, -1125);
+    trap1.position.set(1276, 360, -1125);
     scene.add(trap1);
+    /*trap1.addEventListener('collision', function(marble) {
+        trapdoor.play();
+        console.log("hit the trapdoor");
+    });*/
 
     trap1Constraint = new Physijs.HingeConstraint(
         trap1,
@@ -326,10 +367,25 @@ function init() {
         new THREE.MeshFaceMaterial(floor3Materials),
         0
     );
-    floor3.position.set(1900, 370, -1125);
+    floor3.position.set(1900, 360, -1125);
     scene.add(floor3);
 
-
+    /*var trollface = loadMaterial('trollface.jpg', 1, 1, 0, 0, 0, 0);
+    var trollMaterials = [
+        floorSideMaterial,
+        trollface,
+        floorSideMaterial,
+        floorSideMaterial,
+        floorSideMaterial,
+        floorSideMaterial
+    ];
+    var troll = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(20, 50, 50),
+        new THREE.MeshFaceMaterial(trollMaterials),
+        0
+    );
+    troll.position.set(1450, 400, -1020);
+    scene.add(troll);*/
 
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
@@ -340,12 +396,12 @@ function init() {
             1,
             0.8
         ),
-        1500
+        1200
     );
     //marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
     marble.castShadow = true;
-    marble.position.set(1010, 390, -1120);
-    //marble.position.set(375, 50, 375);
+    //marble.position.set(1010, 390, -1120);
+    marble.position.set(375, 50, 375);
     scene.add(marble);
     marble.setDamping(null, 0.96); // after add to scene!!!
 
@@ -356,7 +412,6 @@ function init() {
         allowJump = true;
         allowMovement = true;
     });
-
 
 
 
@@ -387,9 +442,13 @@ function init() {
         new THREE.MeshFaceMaterial(materials),
         1000
     );
-    gem.name = "gem";
-    gem.position.set(200, 60, 400)
+    gem.position.set(200, 50, 400)
     scene.add(gem);
+    gem.addEventListener('collision', function(marble) {
+        console.log("Picked up a gem!");
+        gotgem.play();
+        scene.remove(gem);
+    });
 
     gemCon = new Physijs.DOFConstraint(
         gem, null, gem.position
@@ -474,7 +533,7 @@ function animate() {
     gemCon.enableAngularMotor(0);
     gemCon.enableAngularMotor(2);
 
-    punch1.setLinearVelocity({x: 300 * dirPunch, y: 0, z: 0});
+    punch1.setLinearVelocity({x: 400 * dirPunch, y: 0, z: 0});
     if(Math.ceil(punch1.position.x) > 1390) dirPunch = -1;
     if(Math.ceil(punch1.position.x) < 610) dirPunch = 1;
 
@@ -516,7 +575,7 @@ function updateInput() {
         console.log("ready to jump");
         marble.applyCentralImpulse(new THREE.Vector3(0, 0.7 * 1e6, 0));
         allowJump = false;
-        allowMovement = false;
+        //allowMovement = false;
 
         /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
         camera.up.set(0, -1, 0);*/
