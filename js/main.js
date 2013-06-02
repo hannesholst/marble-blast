@@ -60,9 +60,7 @@ function init() {
 
     // add camera
     camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 100000);
-    camera.position.z = 375;
-    camera.position.y = 75;
-    camera.position.x = -150;
+    camera.position.set(1000, 270, 700);
     scene.add(camera);
 
     // add keyboard controls
@@ -77,8 +75,8 @@ function init() {
     controls.userPanSpeed = 100;
     //controls.minPolarAngle = (2/5)*Math.PI;
     controls.maxPolarAngle = (2/5)*Math.PI;
-    controls.minDistance = 600;
-    controls.maxDistance = 600;
+    controls.minDistance = 800;
+    controls.maxDistance = 800;
 
     // add light
     var light = new THREE.DirectionalLight(0xffffff);
@@ -222,7 +220,7 @@ function init() {
     );
     scene.addConstraint(platform2Constraint);
     platform2Constraint.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    platform2Constraint.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
+    platform2Constraint.setLinearUpperLimit(new THREE.Vector3(650, 0, 0));
     platform2Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     platform2Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
@@ -245,7 +243,7 @@ function init() {
         new THREE.MeshFaceMaterial(floor2Materials),
         0
     );
-    floor2.position.set(1025, 360, -500);
+    floor2.position.set(1025, 360, -750);
     scene.add(floor2);
 
 
@@ -277,7 +275,37 @@ function init() {
     punch1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     punch1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
+    var trap1Material = loadMaterial('custom_woodbox.jpg', 1, 1, 0, 0, 0, 0);
+    var trap1Materials = [
+        trap1Material,
+        trap1Material,
+        trap1Material,
+        trap1Material,
+        trap1Material,
+        trap1Material
+    ];
 
+    trap1 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 10, 250),
+        new THREE.MeshFaceMaterial(trap1Materials),
+        100
+    );
+    trap1.position.set(1275, 360, -1125);
+    scene.add(trap1);
+
+    trap1Constraint = new Physijs.HingeConstraint(
+        trap1,
+        null,
+        new THREE.Vector3(trap1.position.x-125, trap1.position.y, trap1.position.z),
+        new THREE.Vector3(0, 0, 1)
+    );
+    scene.addConstraint(trap1Constraint);
+    trap1Constraint.setLimits(
+        0,
+        -Math.PI/2,
+        0,
+        0
+    );
 
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
@@ -292,11 +320,15 @@ function init() {
     );
     //marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
     marble.castShadow = true;
-    marble.position.set(0, 500, 0);
+    marble.position.set(1010, 390, -1120);
+    //marble.position.set(375, 50, 375);
     scene.add(marble);
     marble.setDamping(null, 0.96); // after add to scene!!!
 
     marble.addEventListener('collision', function() {
+        //if(this._physijs.id == 10) scene.__removeObject(gem);
+
+
         allowJump = true;
         allowMovement = true;
     });
@@ -331,6 +363,7 @@ function init() {
         new THREE.MeshFaceMaterial(materials),
         1000
     );
+    gem.name = "gem";
     gem.position.set(200, 60, 400)
     scene.add(gem);
 
@@ -421,14 +454,13 @@ function animate() {
     if(Math.ceil(punch1.position.x) > 1390) dirPunch = -1;
     if(Math.ceil(punch1.position.x) < 610) dirPunch = 1;
 
-    platform2.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
-    if(Math.ceil(platform2.position.x) > 770) dir = -1;
-    if(Math.ceil(platform2.position.x) < 380) dir = 1;
-
     platform1.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
     if(Math.ceil(platform1.position.y) > 360) dirAgain = -1;
     if(Math.ceil(platform1.position.y) < 16) dirAgain = 1;
 
+    platform2.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
+    if(Math.ceil(platform2.position.x) > 1010) dir = -1;
+    if(Math.ceil(platform2.position.x) < 380) dir = 1;
 
 }
 
@@ -458,9 +490,10 @@ function updateInput() {
         marble.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
     } else if(keyboard.pressed('space') && allowJump) {
         console.log("ready to jump");
-        marble.applyCentralImpulse(new THREE.Vector3(0, 1 * 1e6, 0));
+        marble.applyCentralImpulse(new THREE.Vector3(0, 0.7 * 1e6, 0));
         allowJump = false;
-        //allowMovement = false;
+        allowMovement = false;
+
         /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
         camera.up.set(0, -1, 0);*/
     }
