@@ -275,7 +275,7 @@ function init() {
     punch1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     punch1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
-    var trap1Material = loadMaterial('custom_woodbox.jpg', 1, 1, 0, 0, 0, 0);
+    var trap1Material = loadMaterial('custom_woodbox.jpg', 1, 1, 0, 0, 1, 0);
     var trap1Materials = [
         trap1Material,
         trap1Material,
@@ -288,7 +288,7 @@ function init() {
     trap1 = new Physijs.BoxMesh(
         new THREE.CubeGeometry(250, 10, 250),
         new THREE.MeshFaceMaterial(trap1Materials),
-        100
+        1
     );
     trap1.position.set(1275, 360, -1125);
     scene.add(trap1);
@@ -306,6 +306,30 @@ function init() {
         0,
         0
     );
+
+    // add floor3
+    var floor3Material = loadMaterial('grid_cool.jpg', 4, 1, 0, 0, 1, 0.8);
+    var floor3FrontSideMaterial = loadMaterial('edge_white2.jpg', 5, 1, 0, 0, 0, 0);
+    var floor3LeftSideMaterial = loadMaterial('edge_white2.jpg', 20, 1, 0, 0, 1, 0);
+
+    var floor3Materials = [
+        floor3FrontSideMaterial,
+        floor3FrontSideMaterial,
+        floor3Material,
+        floor3Material,
+        floor3LeftSideMaterial,
+        floor3LeftSideMaterial
+    ];
+
+    var floor3 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(1000, 10, 250),
+        new THREE.MeshFaceMaterial(floor3Materials),
+        0
+    );
+    floor3.position.set(1900, 370, -1125);
+    scene.add(floor3);
+
+
 
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
