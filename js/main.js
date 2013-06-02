@@ -93,7 +93,7 @@ function init() {
     light.shadowCameraTop = 1000;
     scene.add(light);
 
-    //window.addEventListener( 'resize', onWindowResize, false ); // fix this crap!
+    window.addEventListener( 'resize', onWindowResize, false ); // fix this crap!
 
     // toggle full screen
     THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
@@ -139,7 +139,7 @@ function init() {
     scene.add(skybox);
 
     // add floor1
-    var floorMaterial = loadMaterial('grid_cool.jpg', 4, 4, 0, 0, 1, 0);
+    var floorMaterial = loadMaterial('grid_cool.jpg', 4, 4, 0, 0, 1, 0.8);
     var floorSideMaterial = loadMaterial('edge_white2.jpg', 20, 1, 0, 0, 0, 0);
 
     var floorMaterials = [
@@ -274,7 +274,7 @@ function init() {
         Physijs.createMaterial(
             new THREE.MeshBasicMaterial({ map: boxTexture }),
             1,
-            0
+            0.8
         ),
         1500
     );
@@ -314,7 +314,7 @@ function loadTexture( path ) {
 
 }
 
-/*function onWindowResize() {
+ function onWindowResize() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -323,9 +323,9 @@ function loadTexture( path ) {
 
     //controls.handleResize();
 
-    render();
+    //render();
 
-}*/
+}
 
 function render() {
 
