@@ -20,6 +20,21 @@ $(document).ready(function() {
 
 });
 
+function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution) {
+
+    var texture = THREE.ImageUtils.loadTexture('img/' + file);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(mapX, mapY);
+    texture.offset.set(offsetX, offsetY);
+
+    return Physijs.createMaterial(
+        new THREE.MeshBasicMaterial({ map: texture }),
+        friction,
+        restitution
+    );
+
+}
+
 // initialize game
 function init() {
 
@@ -123,26 +138,9 @@ function init() {
     skybox.scale.x = - 1;
     scene.add(skybox);
 
-    // add floor textures & materials
-    var floorTexture = THREE.ImageUtils.loadTexture('img/grid_cool.jpg');
-    floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(4, 4);
-
-    var floorMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: floorTexture }),
-        1,
-        0
-    );
-
-    var floorSideTexture = THREE.ImageUtils.loadTexture('img/edge_white2.jpg');
-    floorSideTexture.wrapS = floorSideTexture.wrapT = THREE.RepeatWrapping;
-    floorSideTexture.repeat.set(20, 1);
-
-    var floorSideMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: floorSideTexture }),
-        1,
-        0
-    );
+    // add floor1
+    var floorMaterial = loadMaterial('grid_cool.jpg', 4, 4, 0, 0, 1, 0);
+    var floorSideMaterial = loadMaterial('edge_white2.jpg', 20, 1, 0, 0, 0, 0);
 
     var floorMaterials = [
         floorSideMaterial,
@@ -153,43 +151,36 @@ function init() {
         floorSideMaterial
     ];
 
-    // add floor1
     var floor1 = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(500, 10, 500),
+        new THREE.CubeGeometry(1000, 10, 1000),
         new THREE.MeshFaceMaterial(floorMaterials),
         0
     );
-    floor1.receiveShadow = true;
     scene.add(floor1);
 
+    // add box1
+    var boxMaterial = loadMaterial('grid_cool.jpg', 2, 2, 0, 0, 1, 0);
+    var boxSideMaterial = loadMaterial('wall_neutral3.jpg', 4, 1, 0, 0, 0, 0);
 
+    var boxMaterials = [
+        boxSideMaterial,
+        boxSideMaterial,
+        boxMaterial,
+        boxMaterial,
+        boxSideMaterial,
+        boxSideMaterial
+    ];
 
-
-
-    // platform texture
-    var platformTexture = THREE.ImageUtils.loadTexture('img/grid_neutral2.jpg');
-    platformTexture.wrapS = platformTexture.wrapT = THREE.RepeatWrapping;
-    platformTexture.offset.set(0.5, 0.5);
-    platformTexture.repeat.set( 2, 2 );
-
-    // platform material
-    var platformMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: platformTexture }),
-        1,
+    var box1 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(500, 750, 500),
+        new THREE.MeshFaceMaterial(boxMaterials),
         0
     );
+    scene.add(box1);
 
-    // platform side texture
-    var platformSideTexture = THREE.ImageUtils.loadTexture('img/stripe_caution.jpg');
-    platformSideTexture.wrapS = platformSideTexture.wrapT = THREE.RepeatWrapping;
-    platformSideTexture.repeat.set( 5, 1 );
-
-    // platform side material
-    var platformSideMaterial = Physijs.createMaterial(
-        new THREE.MeshBasicMaterial({ map: platformSideTexture }),
-        0,
-        0
-    );
+    // add platform1
+    var platformMaterial = loadMaterial('grid_neutral2.jpg', 2, 2, 0.5, 0.5, 1, 0);
+    var platformSideMaterial = loadMaterial('stripe_caution.jpg', 5, 1, 0, 0, 0, 0);
 
     var platformMaterials = [
         platformSideMaterial,
@@ -200,21 +191,17 @@ function init() {
         platformSideMaterial
     ];
 
-    platform = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(300, 25, 300),
-        new THREE.MeshFaceMaterial(materials),
+    platform1 = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 20, 250),
+        new THREE.MeshFaceMaterial(platformMaterials),
         10000
     );
 
-    platform.position.setY(0);
-    platform.position.setX(-500);
-    platform.position.setZ(400);
-    scene.add(platform);
-    platform.castShadow = true;
-    platform.receiveShadow = true;
+    platform1.position.set(-125, 0, 375);
+    scene.add(platform1);
 
     again = new Physijs.DOFConstraint(
-        platform, null, platform.position
+        platform1, null, platform1.position
     );
     scene.addConstraint(again);
     again.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
@@ -257,7 +244,7 @@ function init() {
         new THREE.MeshFaceMaterial(materials),
         1000
     );
-    gem.position.set(-200, 60, 400)
+    gem.position.set(200, 60, 400)
     scene.add(gem);
 
     gemCon = new Physijs.DOFConstraint(
@@ -289,11 +276,11 @@ function init() {
             1,
             0
         ),
-        1000
+        1500
     );
     marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
     marble.castShadow = true;
-    marble.position.set(0, 50, 0);
+    marble.position.set(450, 50, 450);
     scene.add(marble);
     marble.setDamping(null, 0.96); // after add to scene!!!
 
@@ -368,9 +355,9 @@ function animate() {
     if(Math.ceil(other.position.x) > 350) dir = -1;
     if(Math.ceil(other.position.x) < 50) dir = 1;*/
 
-    platform.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
-    if(Math.ceil(platform.position.y) > 350) dirAgain = -1;
-    if(Math.ceil(platform.position.y) < 50) dirAgain = 1;
+    platform1.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
+    if(Math.ceil(platform1.position.y) > 350) dirAgain = -1;
+    if(Math.ceil(platform1.position.y) < 50) dirAgain = 1;
 
 
 }
@@ -402,8 +389,8 @@ function updateInput() {
     } else if(keyboard.pressed('space') && allowJump) {
         console.log("ready to jump");
         marble.applyCentralImpulse(new THREE.Vector3(0, 0.5 * 1e6, 0));
-        allowJump = false;
-        allowMovement = false;
+        //allowJump = false;
+        //allowMovement = false;
         /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
         camera.up.set(0, -1, 0);*/
     }
