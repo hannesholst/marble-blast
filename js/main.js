@@ -41,10 +41,14 @@ function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution)
 // initialize game
 function init() {
 
+    var enableShadows = false;
     var collectedGems = 0;
 
-    marblefall = new Audio('sound/marblefall.wav');
-    marblefall.volume = 0.5;
+    firewrks = new Audio('sound/firewrks.wav');
+    firewrks.volume = 0.6;
+
+    missinggems = new Audio('sound/missinggems.wav');
+    missinggems.volume = 0.6;
 
     gotgem = new Audio('sound/gotgem.wav');
     gotgem.volume = 0.5;
@@ -68,14 +72,6 @@ function init() {
     go = new Audio('sound/go.wav');
     set.volume = 0.3;
 
-
-    /*ready.play();
-    setTimeout(1500);
-    set.play();
-    setTimeout(1500);
-    go.play();*/
-    //spawn.play();
-
     // display FPS stats
     stats = new Stats();
     stats.domElement.style.position = 'absolute';
@@ -87,7 +83,7 @@ function init() {
     renderer.setSize($(window).width(), $(window).height());
     renderer.shadowMapEnabled = true;
     //renderer.shadowMapSoft = true;
-    renderer.antialias = true;
+    //renderer.antialias = true;
 
     $('#container').append(renderer.domElement);
 
@@ -128,14 +124,16 @@ function init() {
     var light = new THREE.DirectionalLight(0xffffff);
     light.position.set(1000, 1000, 1000);
     light.castShadow = true;
-    light.shadowDarkness = 0.5;
-    light.shadowCameraVisible = true;
+    light.shadowDarkness = 0.6;
+    //light.shadowCameraVisible = true;
     //light.shadowCameraNear = 1000;
     //light.shadowCameraFar = 5000;
-    light.shadowCameraLeft = -1000;
-    light.shadowCameraRight = 1000;
-    light.shadowCameraBottom = -1000;
-    light.shadowCameraTop = 1000;
+    light.shadowCameraLeft = -2000;
+    light.shadowCameraRight = 2000;
+    light.shadowCameraBottom = -2000;
+    light.shadowCameraTop = 2000;
+    light.shadowMapWidth = 2048;
+    light.shadowMapHeight = 2048;
     scene.add(light);
 
     window.addEventListener( 'resize', onWindowResize, false ); // fix this crap!
@@ -163,8 +161,7 @@ function init() {
         createAxis(v(0, 0, -axisLength), v(0, 0, axisLength), 0x0000FF);
     };
 
-    //To use enter the axis length
-    debugaxis(10000);
+    //debugaxis(10000);
 
 
 
@@ -360,9 +357,9 @@ function init() {
     );
 
     // add floor3
-    var floor3Material = loadMaterial('grid_cool.jpg', 4, 1, 0, 0, 1, 0.8);
+    var floor3Material = loadMaterial('grid_cool.jpg', 2, 1, 0, 0, 1, 0.8);
     var floor3FrontSideMaterial = loadMaterial('edge_white2.jpg', 5, 1, 0, 0, 0, 0);
-    var floor3LeftSideMaterial = loadMaterial('edge_white2.jpg', 20, 1, 0, 0, 1, 0);
+    var floor3LeftSideMaterial = loadMaterial('edge_white2.jpg', 10, 1, 0, 0, 1, 0);
 
     var floor3Materials = [
         floor3FrontSideMaterial,
@@ -374,29 +371,40 @@ function init() {
     ];
 
     var floor3 = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(1000, 10, 250),
+        new THREE.CubeGeometry(500, 10, 250),
         new THREE.MeshFaceMaterial(floor3Materials),
         0
     );
-    floor3.position.set(1900, 360, -1125);
+    floor3.position.set(1650, 360, -1125);
     scene.add(floor3);
 
-    /*var trollface = loadMaterial('trollface.jpg', 1, 1, 0, 0, 0, 0);
-    var trollMaterials = [
-        floorSideMaterial,
-        trollface,
-        floorSideMaterial,
-        floorSideMaterial,
-        floorSideMaterial,
-        floorSideMaterial
+    var finishMaterial = loadMaterial('grid_neutral4.jpg', 1, 1, 0, 0, 1, 0);
+    var finishSideMaterial = loadMaterial('edge_white2.jpg', 5, 1, 0, 0, 0, 0);
+    var finishMaterials = [
+        finishSideMaterial,
+        finishSideMaterial,
+        finishMaterial,
+        finishMaterial,
+        finishSideMaterial,
+        finishSideMaterial
     ];
-    var troll = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(20, 50, 50),
-        new THREE.MeshFaceMaterial(trollMaterials),
+
+    finish = new Physijs.BoxMesh(
+        new THREE.CubeGeometry(250, 10, 250),
+        new THREE.MeshFaceMaterial(finishMaterials),
         0
     );
-    troll.position.set(1450, 400, -1020);
-    scene.add(troll);*/
+    finish.position.set(2025, 360, -1125);
+    finish.addEventListener('collision', function(target) {
+        if(target._physijs.id == marble._physijs.id) {
+            if(collectedGems == 5) {
+                firewrks.play();
+            } else {
+                missinggems.play();
+            }
+        }
+    });
+    scene.add(finish);
 
 
     var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
@@ -410,25 +418,14 @@ function init() {
         1200
     );
     //marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
-    marble.castShadow = true;
-    //marble.position.set(1010, 390, -1120);
     marble.position.set(375, 50, 375);
     scene.add(marble);
     marble.setDamping(null, 0.96); // after add to scene!!!
 
     marble.addEventListener('collision', function() {
-        //if(this._physijs.id == 10) scene.__removeObject(gem);
-
-
         allowJump = true;
         allowMovement = true;
     });
-
-
-
-
-
-
 
     var gemTexture = THREE.ImageUtils.loadTexture('img/pattern_warm1.jpg');
     gemTexture.wrapS = gemTexture.wrapT = THREE.RepeatWrapping;
@@ -454,7 +451,7 @@ function init() {
         new THREE.Vector3(-140, 405, -128),
         new THREE.Vector3(580, 405, -130),
         new THREE.Vector3(1020, 395, -900),
-        new THREE.Vector3(1780, 395, -1130)
+        new THREE.Vector3(1530, 395, -1130)
     ];
 
     var gemObjects = [];
@@ -496,18 +493,36 @@ function init() {
         constraint.enableAngularMotor(2);
     });
 
-    /*test = new Physijs.DOFConstraint(
-        other, null, other.position
-    );
-    scene.addConstraint(test);
-    test.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setLinearUpperLimit(new THREE.Vector3(400, 0, 0));
-    test.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
-    test.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));*/
 
 
+    if(enableShadows) {
+        floor1.castShadow = true;
+        floor1.receiveShadow = true;
+        floor2.castShadow = true;
+        floor2.receiveShadow = true;
+        floor3.castShadow = true;
+        floor3.receiveShadow = true;
+        punch1.castShadow = true;
+        punch1.receiveShadow = true;
+        marble.castShadow = true;
+        marble.receiveShadow = true;
+        platform1.castShadow = true;
+        platform1.receiveShadow = true;
+        platform2.castShadow = true;
+        platform2.receiveShadow = true;
+        finish.castShadow = true;
+        finish.receiveShadow = true;
+        trap1.castShadow = true;
+        trap1.receiveShadow = true;
+        box1.castShadow = true;
+        box1.receiveShadow = true;
 
+        $.each(gemObjects, function() {
+            this.castShadow = true;
+            this.receiveShadow = true;
+        });
 
+    }
 
 
 }
@@ -607,14 +622,7 @@ function updateInput() {
         console.log("ready to jump");
         marble.applyCentralImpulse(new THREE.Vector3(0, 0.7 * 1e6, 0));
         allowJump = false;
-
-        //scene.setGravity(new THREE.Vector3(0, -1000, 0));
-        //camera.up.set(0, -1, 0);
     }
-
-
-
-    //Math.abs(marble.getLinearVelocity().y < 10) // may be removed
 
 }
 
