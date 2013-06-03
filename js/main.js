@@ -41,17 +41,26 @@ function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution)
 // initialize game
 function init() {
 
+    var collectedGems = 0;
 
+    marblefall = new Audio('sound/marblefall.wav');
+    marblefall.volume = 0.5;
 
     gotgem = new Audio('sound/gotgem.wav');
-    gotgem.volume = 0.8;
-    spawn = new Audio('sound/spawn.wav');
+    gotgem.volume = 0.5;
+
+    gotallgems = new Audio('sound/gotallgems.wav');
+    gotallgems.volume = 0.6;
+
     trapdoor = new Audio('sound/trapdooropen.wav');
+    trapdoor.volume = 0.5;
 
     groovepolice = new Audio('sound/groovepolice.ogg');
     groovepolice.volume = 0.2;
     groovepolice.loop = true;
 
+    spawn = new Audio('sound/spawn.wav');
+    spawn.volume = 0.4;
     ready = new Audio('sound/ready.wav');
     ready.volume = 0.2;
     set = new Audio('sound/set.wav');
@@ -88,8 +97,8 @@ function init() {
 
     var handleIntro = function() {
         setTimeout(function() { ready.play(); }, 0);
-        setTimeout(function() { set.play(); }, 2000);
-        setTimeout(function() { go.play(); }, 3500);
+        setTimeout(function() { set.play(); }, 1500);
+        setTimeout(function() { go.play(); }, 3000);
         setTimeout(function() { groovepolice.play(); }, 4500);
         scene.removeEventListener('update', handleIntro, false);
     };
@@ -325,14 +334,16 @@ function init() {
     trap1 = new Physijs.BoxMesh(
         new THREE.CubeGeometry(250, 10, 250),
         new THREE.MeshFaceMaterial(trap1Materials),
-        100
+        1
     );
     trap1.position.set(1276, 360, -1125);
     scene.add(trap1);
-    /*trap1.addEventListener('collision', function(marble) {
-        trapdoor.play();
-        console.log("hit the trapdoor");
-    });*/
+    trap1.addEventListener('collision', function(target) {
+        if(target._physijs.id == marble._physijs.id) {
+            console.log("Trapdoor opened!");
+            trapdoor.play();
+        }
+    });
 
     trap1Constraint = new Physijs.HingeConstraint(
         trap1,
@@ -419,7 +430,7 @@ function init() {
 
 
 
-    var gemTexture = THREE.ImageUtils.loadTexture('img/grid_cool4.jpg');
+    var gemTexture = THREE.ImageUtils.loadTexture('img/pattern_warm1.jpg');
     gemTexture.wrapS = gemTexture.wrapT = THREE.RepeatWrapping;
     gemTexture.repeat.set( 1, 1 );
 
@@ -437,29 +448,53 @@ function init() {
         gemMaterial,
         gemMaterial
     ];
-    gem = new Physijs.BoxMesh(
-        new THREE.CubeGeometry(30, 30, 30),
-        new THREE.MeshFaceMaterial(materials),
-        1000
-    );
-    gem.position.set(200, 50, 400)
-    scene.add(gem);
-    gem.addEventListener('collision', function(marble) {
-        console.log("Picked up a gem!");
-        gotgem.play();
-        scene.remove(gem);
+
+    var gemPositions = [
+        new THREE.Vector3(380, 35, -115),
+        new THREE.Vector3(-140, 405, -128),
+        new THREE.Vector3(580, 405, -130),
+        new THREE.Vector3(1020, 395, -900),
+        new THREE.Vector3(1780, 395, -1130)
+    ];
+
+    var gemObjects = [];
+    $.each(gemPositions, function() {
+        var gem = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(30, 30, 30),
+            new THREE.MeshFaceMaterial(materials),
+            1000
+        )
+        gem.position = this;
+        gem.addEventListener('collision', function(target) {
+            if(target._physijs.id == marble._physijs.id) {
+                console.log("Picked up a gem!");
+                collectedGems++;
+                if(collectedGems == 5) {
+                    gotallgems.play();
+                } else {
+                    gotgem.play();
+                }
+                scene.remove(gem);
+            }
+        });
+        scene.add(gem);
+        gemObjects.push(gem);
     });
 
-    gemCon = new Physijs.DOFConstraint(
-        gem, null, gem.position
-    );
-    scene.addConstraint(gemCon);
-    gemCon.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
-    gemCon.setLinearUpperLimit(new THREE.Vector3(0, 0, 0));
-    gemCon.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
-    gemCon.setAngularUpperLimit(new THREE.Vector3(2*Math.PI, 0, 2*Math.PI));
-    gemCon.configureAngularMotor( 0, 0, 2*Math.PI, 1, 1000 );
-    gemCon.configureAngularMotor( 2, 0, 2*Math.PI, 1, 1000 );
+    var gemConstraints = [];
+    $.each(gemObjects, function() {
+        var constraint = new Physijs.DOFConstraint(this, null, this.position);
+        scene.addConstraint(constraint);
+        constraint.setLinearLowerLimit(new THREE.Vector3(0, 0, 0));
+        constraint.setLinearUpperLimit(new THREE.Vector3(0, 0, 0));
+        constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
+        constraint.setAngularUpperLimit(new THREE.Vector3(2*Math.PI, 0, 2*Math.PI));
+        constraint.configureAngularMotor( 0, 0, 2*Math.PI, 1, 1000 );
+        constraint.configureAngularMotor( 2, 0, 2*Math.PI, 1, 1000 );
+        gemConstraints.push(constraint);
+        constraint.enableAngularMotor(0);
+        constraint.enableAngularMotor(2);
+    });
 
     /*test = new Physijs.DOFConstraint(
         other, null, other.position
@@ -530,9 +565,6 @@ var dirAgain = 1;
 var dirPunch = 1;
 function animate() {
 
-    gemCon.enableAngularMotor(0);
-    gemCon.enableAngularMotor(2);
-
     punch1.setLinearVelocity({x: 400 * dirPunch, y: 0, z: 0});
     if(Math.ceil(punch1.position.x) > 1390) dirPunch = -1;
     if(Math.ceil(punch1.position.x) < 610) dirPunch = 1;
@@ -575,10 +607,9 @@ function updateInput() {
         console.log("ready to jump");
         marble.applyCentralImpulse(new THREE.Vector3(0, 0.7 * 1e6, 0));
         allowJump = false;
-        //allowMovement = false;
 
-        /*scene.setGravity(new THREE.Vector3(0, -1000, 0));
-        camera.up.set(0, -1, 0);*/
+        //scene.setGravity(new THREE.Vector3(0, -1000, 0));
+        //camera.up.set(0, -1, 0);
     }
 
 
