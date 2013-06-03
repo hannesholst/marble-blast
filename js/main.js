@@ -1,28 +1,20 @@
 // when DOM loaded
 $(document).ready(function() {
 
-
     // load Physijs worker & ammo
     'use strict';
     Physijs.scripts.worker = 'js/physijs_worker.js';
     Physijs.scripts.ammo = 'ammo.js';
 
-    // set global variables
-    var constraint, scene, camera, renderer, geometry, controls, material, marble, keyboard, clock, stats, other, test, nice, again, platform;
-    var texture_placeholder;
-    var allowJump, allowMovement; // warning!!!
-    var punch1;
-
     // initialize game
-    console.log("start init");
     init();
-    console.log("end init");
 
     // render game
     render();
 
 });
 
+// loader for materials
 function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution) {
 
     var texture = THREE.ImageUtils.loadTexture('img/' + file);
@@ -41,9 +33,17 @@ function loadMaterial(file, mapX, mapY, offsetX, offsetY, friction, restitution)
 // initialize game
 function init() {
 
-    var enableShadows = false;
+    // set movement restrictions
+    allowJump = false;
+    allowMovement = false;
+
+    // reset collected gems
     var collectedGems = 0;
 
+    // toggle shadows
+    var enableShadows = false;
+
+    // load sounds effects
     firewrks = new Audio('sound/firewrks.wav');
     firewrks.volume = 0.6;
 
@@ -65,10 +65,13 @@ function init() {
 
     spawn = new Audio('sound/spawn.wav');
     spawn.volume = 0.4;
+
     ready = new Audio('sound/ready.wav');
     ready.volume = 0.2;
+
     set = new Audio('sound/set.wav');
     set.volume = 0.2;
+
     go = new Audio('sound/go.wav');
     set.volume = 0.3;
 
@@ -91,11 +94,13 @@ function init() {
     scene = new Physijs.Scene();
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
 
+    // handle the intro music
     var handleIntro = function() {
-        setTimeout(function() { ready.play(); }, 0);
-        setTimeout(function() { set.play(); }, 1500);
-        setTimeout(function() { go.play(); }, 3000);
-        setTimeout(function() { groovepolice.play(); }, 4500);
+        setTimeout(function() { spawn.play(); }, 0);
+        setTimeout(function() { ready.play(); }, 1500);
+        setTimeout(function() { set.play(); }, 3000);
+        setTimeout(function() { go.play(); }, 4500);
+        setTimeout(function() { groovepolice.play(); }, 6000);
         scene.removeEventListener('update', handleIntro, false);
     };
     scene.addEventListener('update', handleIntro, false);
@@ -117,8 +122,8 @@ function init() {
     controls.userPanSpeed = 100;
     //controls.minPolarAngle = (2/5)*Math.PI;
     controls.maxPolarAngle = (2/5)*Math.PI;
-    controls.minDistance = 800;
-    controls.maxDistance = 800;
+    controls.minDistance = 1000;
+    controls.maxDistance = 1000;
 
     // add light
     var light = new THREE.DirectionalLight(0xffffff);
@@ -136,11 +141,13 @@ function init() {
     light.shadowMapHeight = 2048;
     scene.add(light);
 
-    window.addEventListener( 'resize', onWindowResize, false ); // fix this crap!
+    // check for window resizing
+    window.addEventListener( 'resize', onWindowResize, false );
 
     // toggle full screen
     THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
 
+    // debug axis for level design
     var debugaxis = function(axisLength){
         //Shorten the vertex function
         function v(x,y,z){
@@ -161,11 +168,8 @@ function init() {
         createAxis(v(0, 0, -axisLength), v(0, 0, axisLength), 0x0000FF);
     };
 
+    // use debug axis
     //debugaxis(10000);
-
-
-
-
 
     // add skybox
     var materials = [
@@ -241,6 +245,7 @@ function init() {
     platform1.position.set(-125, 15, 375);
     scene.add(platform1);
 
+    // define platform1's constraints
     platform1Constraint = new Physijs.DOFConstraint(
         platform1, null, platform1.position
     );
@@ -250,6 +255,7 @@ function init() {
     platform1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     platform1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
+    // add platform2
     platform2 = new Physijs.BoxMesh(
         new THREE.CubeGeometry(250, 20, 250),
         new THREE.MeshFaceMaterial(platformMaterials),
@@ -258,6 +264,7 @@ function init() {
     platform2.position.set(375, 360, -125);
     scene.add(platform2);
 
+    // define platform2's constraints
     platform2Constraint = new Physijs.DOFConstraint(
         platform2, null, platform2.position
     );
@@ -289,7 +296,7 @@ function init() {
     floor2.position.set(1025, 360, -750);
     scene.add(floor2);
 
-
+    // add punch1
     var punch1Material = loadMaterial('grid_neutral3.jpg', 1, 1, 0, 0, 0, 0);
     var punch1FrontMaterial = loadMaterial('pattern_neutral2.jpg', 4, 4, 0, 0, 0, 0);
     var punch1Materials = [
@@ -309,6 +316,7 @@ function init() {
     punch1.position.set(1400, 438, -625);
     scene.add(punch1);
 
+    // define punch1's constraints
     punch1Constraint = new Physijs.DOFConstraint(
         punch1, null, punch1.position
     );
@@ -318,6 +326,7 @@ function init() {
     punch1Constraint.setAngularLowerLimit(new THREE.Vector3(0, 0, 0));
     punch1Constraint.setAngularUpperLimit(new THREE.Vector3(0, 0, 0));
 
+    // add trap1
     var trap1Material = loadMaterial('custom_woodbox.jpg', 1, 1, 0, 0, 1, 0);
     var trap1Materials = [
         trap1Material,
@@ -342,6 +351,7 @@ function init() {
         }
     });
 
+    // define trap1's constraints
     trap1Constraint = new Physijs.HingeConstraint(
         trap1,
         null,
@@ -378,6 +388,7 @@ function init() {
     floor3.position.set(1650, 360, -1125);
     scene.add(floor3);
 
+    // add finish
     var finishMaterial = loadMaterial('grid_neutral4.jpg', 1, 1, 0, 0, 1, 0);
     var finishSideMaterial = loadMaterial('edge_white2.jpg', 5, 1, 0, 0, 0, 0);
     var finishMaterials = [
@@ -406,12 +417,12 @@ function init() {
     });
     scene.add(finish);
 
-
-    var boxTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
+    // add marble
+    var marbleTexture = THREE.ImageUtils.loadTexture('img/custom_crate.jpg');
     marble = new Physijs.SphereMesh(
         new THREE.SphereGeometry(16, 32, 32),
         Physijs.createMaterial(
-            new THREE.MeshBasicMaterial({ map: boxTexture }),
+            new THREE.MeshBasicMaterial({ map: marbleTexture }),
             1,
             0.8
         ),
@@ -420,13 +431,14 @@ function init() {
     //marble.setLinearFactor(new THREE.Vector3( 1, 0, 1 )); // does this work?
     marble.position.set(375, 50, 375);
     scene.add(marble);
-    marble.setDamping(null, 0.96); // after add to scene!!!
+    marble.setDamping(null, 0.96); // MUST be used AFTER add to scene!!!
 
     marble.addEventListener('collision', function() {
         allowJump = true;
         allowMovement = true;
     });
 
+    // add gems
     var gemTexture = THREE.ImageUtils.loadTexture('img/pattern_warm1.jpg');
     gemTexture.wrapS = gemTexture.wrapT = THREE.RepeatWrapping;
     gemTexture.repeat.set( 1, 1 );
@@ -478,6 +490,7 @@ function init() {
         gemObjects.push(gem);
     });
 
+    // define gems' constraints
     var gemConstraints = [];
     $.each(gemObjects, function() {
         var constraint = new Physijs.DOFConstraint(this, null, this.position);
@@ -493,8 +506,7 @@ function init() {
         constraint.enableAngularMotor(2);
     });
 
-
-
+    // enable shadows if requested
     if(enableShadows) {
         floor1.castShadow = true;
         floor1.receiveShadow = true;
@@ -523,30 +535,9 @@ function init() {
         });
 
     }
-
-
 }
 
-function loadTexture( path ) {
-
-    var texture = new THREE.Texture( texture_placeholder );
-    var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: true } );
-
-    var image = new Image();
-    image.onload = function () {
-
-        texture.needsUpdate = true;
-        material.map.image = this;
-
-        render();
-
-    };
-    image.src = path;
-
-    return material;
-
-}
-
+// handle window resize
  function onWindowResize() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -554,12 +545,9 @@ function loadTexture( path ) {
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 
-    //controls.handleResize();
-
-    //render();
-
 }
 
+// render the scene
 function render() {
 
     updateInput();
@@ -575,25 +563,32 @@ function render() {
     requestAnimationFrame(render);
 
 }
-var dir = 1;
-var dirAgain = 1;
+
+var dirPlatform2 = 1;
+var dirPlatform1 = 1;
 var dirPunch = 1;
+
+// animate the scene
 function animate() {
 
+    // move punch1
     punch1.setLinearVelocity({x: 400 * dirPunch, y: 0, z: 0});
     if(Math.ceil(punch1.position.x) > 1390) dirPunch = -1;
     if(Math.ceil(punch1.position.x) < 610) dirPunch = 1;
 
-    platform1.setLinearVelocity({x: 0, y: 100 * dirAgain, z: 0});
-    if(Math.ceil(platform1.position.y) > 360) dirAgain = -1;
-    if(Math.ceil(platform1.position.y) < 16) dirAgain = 1;
+    // move platform1
+    platform1.setLinearVelocity({x: 0, y: 100 * dirPlatform1, z: 0});
+    if(Math.ceil(platform1.position.y) > 360) dirPlatform1 = -1;
+    if(Math.ceil(platform1.position.y) < 16) dirPlatform1 = 1;
 
-    platform2.setLinearVelocity({x: 100 * dir, y: 0, z: 0});
-    if(Math.ceil(platform2.position.x) > 1010) dir = -1;
-    if(Math.ceil(platform2.position.x) < 380) dir = 1;
+    // move platform2
+    platform2.setLinearVelocity({x: 100 * dirPlatform2, y: 0, z: 0});
+    if(Math.ceil(platform2.position.x) > 1010) dirPlatform2 = -1;
+    if(Math.ceil(platform2.position.x) < 380) dirPlatform2 = 1;
 
 }
 
+// update controls input
 function updateInput() {
 
     var delta = clock.getDelta();
@@ -614,14 +609,17 @@ function updateInput() {
     }
 
     if(v !== undefined && allowMovement) {
+
         var dirCameraZ = v.applyMatrix4(camera.matrixWorld);
         var dirCamera = dirCameraZ.sub(camera.position);
         dirCamera.y = 0;
         marble.applyCentralForce(dirCamera.multiplyScalar(1e8 * delta));
+
     } else if(keyboard.pressed('space') && allowJump) {
-        console.log("ready to jump");
+
         marble.applyCentralImpulse(new THREE.Vector3(0, 0.7 * 1e6, 0));
         allowJump = false;
+
     }
 
 }
